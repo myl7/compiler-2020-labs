@@ -15,6 +15,13 @@ int pos_end;
 %%
   /* flex的模式与动作 */
   /* TODO */
+
+  /* Comment and blank handlers. */
+"/*"\/*([^*/]|\*[^/]|[^*]\/)*\**"*/" {return COMMENT;}
+[^\f\r\t\v] {return BLANK;}
+\n {return EOL;}
+<<EOF>> {yyterminate();}
+
 . {return ERROR;}
 %%
 // C代码
@@ -37,11 +44,23 @@ void analyzer(char *input_file, Token_Node *token_stream) {
     switch(token) {
       case COMMENT:
         // TODO
+        ;
+        int yylen = strlen(yytext);
+        for (int i = 0; i < yylen; ++i) {
+          if (yytext[i] == '\n') {
+            ++lines;
+            pos_start = 0;
+          } else {
+            ++pos_start;
+          }
+        }
+        break;
       case BLANK:
-        // TODO
+        ++pos_start;
         break;
       case EOL:
-        // TODO
+        ++lines;
+        pos_start = 0;
         break;
       case ERROR:
         printf("[ERR]: unable to analysize %s at %d line, from %d to %d\n", yytext, lines, pos_start, pos_end);
