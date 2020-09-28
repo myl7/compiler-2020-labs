@@ -2,10 +2,14 @@
 
 %{
 /* 声明和选项设置 */
+#include "lexical_analyzer.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "lexical_analyzer.h"
+int lines;
+int pos_start;
+int pos_end;
 %}
 
 %%

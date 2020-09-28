@@ -55,14 +55,14 @@ typedef enum cminus_token_type {
 typedef struct{
     char text[256];
     int token;
-    int lines; 
+    int lines;
 	int pos_start;
 	int pos_end;
 } Token_Node;
 
-int lines;
-int pos_start;
-int pos_end;
+extern int lines;
+extern int pos_start;
+extern int pos_end;
 #define MAX_NUM_TOKEN_NODE 1024
 
 void analyzer(char* input_file, Token_Node* token_stream);
