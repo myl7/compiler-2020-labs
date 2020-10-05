@@ -10,6 +10,11 @@
 int lines;
 int pos_start;
 int pos_end;
+
+static void move(len) {
+  pos_start = pos_end;
+  pos_end = pos_start + (len);
+}
 %}
 
 %%
@@ -17,170 +22,161 @@ int pos_end;
   /* TODO */
 
   /* Comment and blank handlers. */
-"/*"\/*([^*/]|\*[^/]|[^*]\/)*\**"*/" {return COMMENT;}
-[\ \f\r\t\v] {return BLANK;}
-\n {return EOL;}
-<<EOF>> {yyterminate();}
+"/*"\/*([^*/]|\*[^/]|[^*]\/)*\**"*/" {
+  int yylen = strlen(yytext);
+  for (int i = 0; i < yylen; ++i) {
+    if (yytext[i] == '\n') {
+      ++lines;
+      pos_start = 0;
+    } else {
+      ++pos_start;
+    }
+  }
+  pos_end = pos_start + 1;
+  return COMMENT;
+}
+[\ \f\r\t\v] {
+  move(1);
+  return BLANK;
+}
+\n {
+  ++lines;
+  pos_start = 0;
+  pos_end = 1;
+  return EOL;
+}
+<<EOF>> {
+  yyterminate();
+}
 
   /* Keywords. */
 else {
-  pos_start = pos_end;
-  pos_end = pos_start + 4;
+  move(4);
   return ELSE;
 }
 if {
-  pos_start = pos_end;
-  pos_end = pos_start + 2;
+  move(2);
   return IF;
 }
 int {
-  pos_start = pos_end;
-  pos_end = pos_start + 3;
+  move(3);
   return INT;
 }
 return {
-  pos_start = pos_end;
-  pos_end = pos_start + 6;
+  move(6);
   return RETURN;
 }
 void {
-  pos_start = pos_end;
-  pos_end = pos_start + 4;
+  move(4);
   return VOID;
 }
 while {
-  pos_start = pos_end;
-  pos_end = pos_start + 5;
+  move(5);
   return WHILE;
 }
 float {
-  pos_start = pos_end;
-  pos_end = pos_start + 5;
+  move(5);
   return FLOAT;
 }
 
   /* Op. */
 \+ {
-  pos_start = pos_end;
-  pos_end = pos_start + 1;
+  move(1);
   return ADD;
 }
 - {
-  pos_start = pos_end;
-  pos_end = pos_start + 1;
+  move(1);
   return SUB;
 }
 \* {
-  pos_start = pos_end;
-  pos_end = pos_start + 1;
+  move(1);
   return MUL;
 }
 \/ {
-  pos_start = pos_end;
-  pos_end = pos_start + 1;
+  move(1);
   return DIV;
 }
 \< {
-  pos_start = pos_end;
-  pos_end = pos_start + 1;
+  move(1);
   return LT;
 }
 \<= {
-  pos_start = pos_end;
-  pos_end = pos_start + 2;
+  move(2);
   return LTE;
 }
 \> {
-  pos_start = pos_end;
-  pos_end = pos_start + 1;
+  move(1);
   return GT;
 }
 \>= {
-  pos_start = pos_end;
-  pos_end = pos_start + 2;
+  move(2);
   return GT;
 }
 == {
-  pos_start = pos_end;
-  pos_end = pos_start + 2;
+  move(2);
   return EQ;
 }
 != {
-  pos_start = pos_end;
-  pos_end = pos_start + 2;
+  move(2);
   return NEQ;
 }
 = {
-  pos_start = pos_end;
-  pos_end = pos_start + 1;
+  move(1);
   return ASSIN;
 }
 
   /* Punct. */
 ; {
-  pos_start = pos_end;
-  pos_end = pos_start + 1;
+  move(1);
   return SEMICOLON;
 }
 , {
-  pos_start = pos_end;
-  pos_end = pos_start + 1;
+  move(1);
   return COMMA;
 }
 \( {
-  pos_start = pos_end;
-  pos_end = pos_start + 1;
+  move(1);
   return LPARENTHESE;
 }
 \) {
-  pos_start = pos_end;
-  pos_end = pos_start + 1;
+  move(1);
   return RPARENTHESE;
 }
 \[ {
-  pos_start = pos_end;
-  pos_end = pos_start + 1;
+  move(1);
   return LBRACKET;
 }
 \] {
-  pos_start = pos_end;
-  pos_end = pos_start + 1;
+  move(1);
   return RBRACKET;
 }
 \{ {
-  pos_start = pos_end;
-  pos_end = pos_start + 1;
+  move(1);
   return LBRACE;
 }
 \} {
-  pos_start = pos_end;
-  pos_end = pos_start + 1;
+  move(1);
   return RBRACE;
 }
 
 [a-zA-Z]+ {
-  pos_start = pos_end;
-  pos_end = pos_start + strlen(yytext);
+  move(strlen(yytext));
   return IDENTIFIER;
 }
 [0-9]+ {
-  pos_start = pos_end;
-  pos_end = pos_start + strlen(yytext);
+  move(strlen(yytext));
   return INTEGER;
 }
 ([0-9]+\.|[0-9]+\.[0-9]+) {
-  pos_start = pos_end;
-  pos_end = pos_start + strlen(yytext);
+  move(strlen(yytext));
   return FLOATPOINT;
 }
 \[\] {
-  pos_start = pos_end;
-  pos_end = pos_start + 2;
+  move(2);
   return ARRAY;
 }
 [a-zA-Z] {
-  pos_start = pos_end;
-  pos_end = pos_start + 1;
+  move(1);
   return LETTER;
 }
 
@@ -206,26 +202,12 @@ void analyzer(char *input_file, Token_Node *token_stream) {
     switch(token) {
       case COMMENT:
         // TODO
-        ;
-        int yylen = strlen(yytext);
-        for (int i = 0; i < yylen; ++i) {
-          if (yytext[i] == '\n') {
-            ++lines;
-            pos_start = 0;
-          } else {
-            ++pos_start;
-          }
-        }
-        pos_end = pos_start + 1;
         break;
       case BLANK:
-        pos_start = pos_end;
-        pos_end = pos_start + 1;
+        // TODO
         break;
       case EOL:
-        ++lines;
-        pos_start = 0;
-        pos_end = 1;
+        // TODO
         break;
       case ERROR:
         printf("[ERR]: unable to analysize %s at %d line, from %d to %d\n", yytext, lines, pos_start, pos_end);
