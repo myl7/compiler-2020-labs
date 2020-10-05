@@ -18,9 +18,171 @@ int pos_end;
 
   /* Comment and blank handlers. */
 "/*"\/*([^*/]|\*[^/]|[^*]\/)*\**"*/" {return COMMENT;}
-[^\f\r\t\v] {return BLANK;}
+[\ \f\r\t\v] {return BLANK;}
 \n {return EOL;}
 <<EOF>> {yyterminate();}
+
+  /* Keywords. */
+else {
+  pos_start = pos_end;
+  pos_end = pos_start + 4;
+  return ELSE;
+}
+if {
+  pos_start = pos_end;
+  pos_end = pos_start + 2;
+  return IF;
+}
+int {
+  pos_start = pos_end;
+  pos_end = pos_start + 3;
+  return INT;
+}
+return {
+  pos_start = pos_end;
+  pos_end = pos_start + 6;
+  return RETURN;
+}
+void {
+  pos_start = pos_end;
+  pos_end = pos_start + 4;
+  return VOID;
+}
+while {
+  pos_start = pos_end;
+  pos_end = pos_start + 5;
+  return WHILE;
+}
+float {
+  pos_start = pos_end;
+  pos_end = pos_start + 5;
+  return FLOAT;
+}
+
+  /* Op. */
+\+ {
+  pos_start = pos_end;
+  pos_end = pos_start + 1;
+  return ADD;
+}
+- {
+  pos_start = pos_end;
+  pos_end = pos_start + 1;
+  return SUB;
+}
+\* {
+  pos_start = pos_end;
+  pos_end = pos_start + 1;
+  return MUL;
+}
+\/ {
+  pos_start = pos_end;
+  pos_end = pos_start + 1;
+  return DIV;
+}
+\< {
+  pos_start = pos_end;
+  pos_end = pos_start + 1;
+  return LT;
+}
+\<= {
+  pos_start = pos_end;
+  pos_end = pos_start + 2;
+  return LTE;
+}
+\> {
+  pos_start = pos_end;
+  pos_end = pos_start + 1;
+  return GT;
+}
+\>= {
+  pos_start = pos_end;
+  pos_end = pos_start + 2;
+  return GT;
+}
+== {
+  pos_start = pos_end;
+  pos_end = pos_start + 2;
+  return EQ;
+}
+!= {
+  pos_start = pos_end;
+  pos_end = pos_start + 2;
+  return NEQ;
+}
+= {
+  pos_start = pos_end;
+  pos_end = pos_start + 1;
+  return ASSIN;
+}
+
+  /* Punct. */
+; {
+  pos_start = pos_end;
+  pos_end = pos_start + 1;
+  return SEMICOLON;
+}
+, {
+  pos_start = pos_end;
+  pos_end = pos_start + 1;
+  return COMMA;
+}
+\( {
+  pos_start = pos_end;
+  pos_end = pos_start + 1;
+  return LPARENTHESE;
+}
+\) {
+  pos_start = pos_end;
+  pos_end = pos_start + 1;
+  return RPARENTHESE;
+}
+\[ {
+  pos_start = pos_end;
+  pos_end = pos_start + 1;
+  return LBRACKET;
+}
+\] {
+  pos_start = pos_end;
+  pos_end = pos_start + 1;
+  return RBRACKET;
+}
+\{ {
+  pos_start = pos_end;
+  pos_end = pos_start + 1;
+  return LBRACE;
+}
+\} {
+  pos_start = pos_end;
+  pos_end = pos_start + 1;
+  return RBRACE;
+}
+
+[a-zA-Z]+ {
+  pos_start = pos_end;
+  pos_end = pos_start + strlen(yytext);
+  return IDENTIFIER;
+}
+[0-9]+ {
+  pos_start = pos_end;
+  pos_end = pos_start + strlen(yytext);
+  return INTEGER;
+}
+([0-9]+\.|[0-9]+\.[0-9]+) {
+  pos_start = pos_end;
+  pos_end = pos_start + strlen(yytext);
+  return FLOATPOINT;
+}
+\[\] {
+  pos_start = pos_end;
+  pos_end = pos_start + 2;
+  return ARRAY;
+}
+[a-zA-Z] {
+  pos_start = pos_end;
+  pos_end = pos_start + 1;
+  return LETTER;
+}
 
 . {return ERROR;}
 %%
@@ -54,13 +216,16 @@ void analyzer(char *input_file, Token_Node *token_stream) {
             ++pos_start;
           }
         }
+        pos_end = pos_start + 1;
         break;
       case BLANK:
-        ++pos_start;
+        pos_start = pos_end;
+        pos_end = pos_start + 1;
         break;
       case EOL:
         ++lines;
         pos_start = 0;
+        pos_end = 1;
         break;
       case ERROR:
         printf("[ERR]: unable to analysize %s at %d line, from %d to %d\n", yytext, lines, pos_start, pos_end);
