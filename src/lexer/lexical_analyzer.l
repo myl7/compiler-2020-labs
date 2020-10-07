@@ -35,7 +35,7 @@ static void move(len) {
   return COMMENT;
 }
 [\ \f\r\t\v] {
-  move(1);
+  move(yyleng);
   return BLANK;
 }
 \n {
@@ -50,111 +50,111 @@ static void move(len) {
 
   /* Keywords. */
 else {
-  move(4);
+  move(yyleng);
   return ELSE;
 }
 if {
-  move(2);
+  move(yyleng);
   return IF;
 }
 int {
-  move(3);
+  move(yyleng);
   return INT;
 }
 return {
-  move(6);
+  move(yyleng);
   return RETURN;
 }
 void {
-  move(4);
+  move(yyleng);
   return VOID;
 }
 while {
-  move(5);
+  move(yyleng);
   return WHILE;
 }
 float {
-  move(5);
+  move(yyleng);
   return FLOAT;
 }
 
   /* Op. */
 \+ {
-  move(1);
+  move(yyleng);
   return ADD;
 }
 - {
-  move(1);
+  move(yyleng);
   return SUB;
 }
 \* {
-  move(1);
+  move(yyleng);
   return MUL;
 }
 \/ {
-  move(1);
+  move(yyleng);
   return DIV;
 }
 \< {
-  move(1);
+  move(yyleng);
   return LT;
 }
 \<= {
-  move(2);
+  move(yyleng);
   return LTE;
 }
 \> {
-  move(1);
+  move(yyleng);
   return GT;
 }
 \>= {
-  move(2);
+  move(yyleng);
   return GT;
 }
 == {
-  move(2);
+  move(yyleng);
   return EQ;
 }
 != {
-  move(2);
+  move(yyleng);
   return NEQ;
 }
 = {
-  move(1);
+  move(yyleng);
   return ASSIN;
 }
 
   /* Punct. */
 ; {
-  move(1);
+  move(yyleng);
   return SEMICOLON;
 }
 , {
-  move(1);
+  move(yyleng);
   return COMMA;
 }
 \( {
-  move(1);
+  move(yyleng);
   return LPARENTHESE;
 }
 \) {
-  move(1);
+  move(yyleng);
   return RPARENTHESE;
 }
 \[ {
-  move(1);
+  move(yyleng);
   return LBRACKET;
 }
 \] {
-  move(1);
+  move(yyleng);
   return RBRACKET;
 }
 \{ {
-  move(1);
+  move(yyleng);
   return LBRACE;
 }
 \} {
-  move(1);
+  move(yyleng);
   return RBRACE;
 }
 
@@ -171,11 +171,11 @@ float {
   return FLOATPOINT;
 }
 \[\] {
-  move(2);
+  move(yyleng);
   return ARRAY;
 }
 [a-zA-Z] {
-  move(1);
+  move(yyleng);
   return LETTER;
 }
 
