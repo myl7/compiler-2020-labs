@@ -166,7 +166,7 @@ float {
   move(yyleng);
   return INTEGER;
 }
-([0-9]+\.|[0-9]+\.[0-9]+) {
+([0-9]+\.|[0-9]*\.[0-9]+) {
   move(yyleng);
   return FLOATPOINT;
 }
