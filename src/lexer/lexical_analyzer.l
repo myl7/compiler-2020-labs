@@ -13,7 +13,7 @@ int pos_end = 1;
 
 static void move(len) {
   pos_start = pos_end;
-  pos_end = pos_start + (len);
+  pos_end = pos_start + len;
 }
 %}
 
