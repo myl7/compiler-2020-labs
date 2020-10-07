@@ -23,8 +23,7 @@ static void move(len) {
 
   /* Comment and blank handlers. */
 "/*"\/*([^*/]|\*[^/]|[^*]\/)*\**"*/" {
-  int yylen = strlen(yytext);
-  for (int i = 0; i < yylen; ++i) {
+  for (int i = 0; i < yyleng; ++i) {
     if (yytext[i] == '\n') {
       ++lines;
       pos_start = 0;
@@ -160,15 +159,15 @@ float {
 }
 
 [a-zA-Z]+ {
-  move(strlen(yytext));
+  move(yyleng);
   return IDENTIFIER;
 }
 [0-9]+ {
-  move(strlen(yytext));
+  move(yyleng);
   return INTEGER;
 }
 ([0-9]+\.|[0-9]+\.[0-9]+) {
-  move(strlen(yytext));
+  move(yyleng);
   return FLOATPOINT;
 }
 \[\] {
@@ -202,10 +201,8 @@ void analyzer(char *input_file, Token_Node *token_stream) {
     switch(token) {
       case COMMENT:
         // TODO
-        break;
       case BLANK:
         // TODO
-        break;
       case EOL:
         // TODO
         break;
