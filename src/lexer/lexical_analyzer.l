@@ -22,7 +22,7 @@ static void move(len) {
   /* TODO */
 
   /* Comment and blank handlers. */
-"/*"\/*([^*/]|\*[^/]|[^*]\/)*\**"*/" {
+"/*"([^*]|\*[^/])*\**"*/" {
   for (int i = 0; i < yyleng; ++i) {
     if (yytext[i] == '\n') {
       ++lines;
