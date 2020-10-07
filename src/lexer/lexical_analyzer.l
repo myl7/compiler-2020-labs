@@ -7,9 +7,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-int lines;
-int pos_start;
-int pos_end;
+int lines = 1;
+int pos_start = 1;
+int pos_end = 1;
 
 static void move(len) {
   pos_start = pos_end;
@@ -26,12 +26,12 @@ static void move(len) {
   for (int i = 0; i < yyleng; ++i) {
     if (yytext[i] == '\n') {
       ++lines;
-      pos_start = 0;
+      pos_start = 1;
     } else {
       ++pos_start;
     }
   }
-  pos_end = pos_start + 1;
+  pos_end = pos_start;
   return COMMENT;
 }
 [\ \f\r\t\v] {
@@ -40,7 +40,7 @@ static void move(len) {
 }
 \n {
   ++lines;
-  pos_start = 0;
+  pos_start = 1;
   pos_end = 1;
   return EOL;
 }
