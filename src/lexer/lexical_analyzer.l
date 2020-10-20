@@ -23,6 +23,7 @@ static void move(len) {
 
   /* Comment and blank handlers. */
 "/*"([^*]|\*[^/])*\**"*/" {
+  pos_start = pos_end;
   for (int i = 0; i < yyleng; ++i) {
     if (yytext[i] == '\n') {
       ++lines;
