@@ -1,0 +1,30 @@
+/* I am a comment. */
+/**
+ * I am a comment too.
+ */
+int IcanContinue;
+
+int main(int argc, void argv[]) {
+  float i[100];
+
+  if (a + b - c * d / e) {
+    return u + v == k;
+    return;
+  } else {}
+
+  a == (c <= b);
+
+  ;;;
+
+  while (HelloWorld/* I am tired, no more*/*/* I sm strong!!!*/19.86769) {
+    i[3 + 9 - u * 17] = 12;
+  }
+
+  return 0000;
+/*
+}
+*/
+  IcanContinue = 7;
+
+  return 1/* Absolutely */;
+}
