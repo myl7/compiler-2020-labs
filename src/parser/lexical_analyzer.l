@@ -11,7 +11,7 @@ int lines = 1;
 int pos_start = 1;
 int pos_end = 1;
 
-static void move(len) {
+static void move(int len) {
   pos_start = pos_end;
   pos_end = pos_start + len;
 }
@@ -34,17 +34,14 @@ void pass_node(char *text){
     }
   }
   pos_end = pos_start;
-  return COMMENT;
 }
 [\ \f\r\t\v] {
   move(yyleng);
-  return BLANK;
 }
 \n {
   ++lines;
   pos_start = 1;
   pos_end = 1;
-  return EOL;
 }
 <<EOF>> {
   yyterminate();
@@ -53,177 +50,161 @@ void pass_node(char *text){
   /* Keywords. */
 else {
   move(yyleng);
+  pass_node(yytext);
   return ELSE;
 }
 if {
   move(yyleng);
+  pass_node(yytext);
   return IF;
 }
 int {
   move(yyleng);
+  pass_node(yytext);
   return INT;
 }
 return {
   move(yyleng);
+  pass_node(yytext);
   return RETURN;
 }
 void {
   move(yyleng);
+  pass_node(yytext);
   return VOID;
 }
 while {
   move(yyleng);
+  pass_node(yytext);
   return WHILE;
 }
 float {
   move(yyleng);
+  pass_node(yytext);
   return FLOAT;
 }
 
   /* Op. */
 \+ {
   move(yyleng);
+  pass_node(yytext);
   return ADD;
 }
 - {
   move(yyleng);
+  pass_node(yytext);
   return SUB;
 }
 \* {
   move(yyleng);
+  pass_node(yytext);
   return MUL;
 }
 \/ {
   move(yyleng);
+  pass_node(yytext);
   return DIV;
 }
 \< {
   move(yyleng);
+  pass_node(yytext);
   return LT;
 }
 \<= {
   move(yyleng);
+  pass_node(yytext);
   return LTE;
 }
 \> {
   move(yyleng);
+  pass_node(yytext);
   return GT;
 }
 \>= {
   move(yyleng);
-  return GT;
+  pass_node(yytext);
+  return GTE;
 }
 == {
   move(yyleng);
+  pass_node(yytext);
   return EQ;
 }
 != {
   move(yyleng);
+  pass_node(yytext);
   return NEQ;
 }
 = {
   move(yyleng);
+  pass_node(yytext);
   return ASSIN;
 }
 
   /* Punct. */
 ; {
   move(yyleng);
+  pass_node(yytext);
   return SEMICOLON;
 }
 , {
   move(yyleng);
+  pass_node(yytext);
   return COMMA;
 }
 \( {
   move(yyleng);
+  pass_node(yytext);
   return LPARENTHESE;
 }
 \) {
   move(yyleng);
+  pass_node(yytext);
   return RPARENTHESE;
 }
 \[ {
   move(yyleng);
+  pass_node(yytext);
   return LBRACKET;
 }
 \] {
   move(yyleng);
+  pass_node(yytext);
   return RBRACKET;
 }
 \{ {
   move(yyleng);
+  pass_node(yytext);
   return LBRACE;
 }
 \} {
   move(yyleng);
+  pass_node(yytext);
   return RBRACE;
 }
 
 [a-zA-Z]+ {
   move(yyleng);
+  pass_node(yytext);
   return IDENTIFIER;
 }
 [0-9]+ {
   move(yyleng);
+  pass_node(yytext);
   return INTEGER;
 }
 ([0-9]+\.|[0-9]*\.[0-9]+) {
   move(yyleng);
+  pass_node(yytext);
   return FLOATPOINT;
 }
 \[\] {
   move(yyleng);
+  pass_node(yytext);
   return ARRAY;
 }
-[a-zA-Z] {
-  move(yyleng);
-  return LETTER;
-}
 
-. {return ERROR;}
+. {
+  yyerror(yytext);
+}
 %%
-
-/// \brief Analysize a *.cminus file
-///
-/// \param input_file 需要分析的文件路径
-/// \param token Stream, Token_Node结构体数组，用于存储分析结果，具体定义参考lexical_analyer.h
-void analyzer(char *input_file, Token_Node *token_stream) {
-  if(!(yyin = fopen(input_file,"r"))) {
-    printf("[ERR] No input file\n");
-    exit(1);
-  }
-  printf("[START]: Read from: %s\n", input_file);
-
-  int token;
-  int index = 0;
-
-  while(token = yylex()) {
-    switch(token) {
-      case COMMENT:
-      case BLANK:
-      case EOL:
-        break;
-      case ERROR:
-        printf("[ERR]: unable to analysize %s at %d line, from %d to %d\n", yytext, lines, pos_start, pos_end);
-      default:
-        if (token == ERROR) {
-          sprintf(token_stream[index].text, "[ERR]: unable to analysize %s at %d line, from %d to %d", yytext, lines,
-                  pos_start, pos_end);
-        } else {
-          strcpy(token_stream[index].text, yytext);
-        }
-        token_stream[index].token = token;
-        token_stream[index].lines = lines;
-        token_stream[index].pos_start = pos_start;
-        token_stream[index].pos_end = pos_end;
-        index++;
-        if (index >= MAX_NUM_TOKEN_NODE) {
-          printf("%d has too many tokens (> %d)", input_file, MAX_NUM_TOKEN_NODE);
-          exit(1);
-        }
-    }
-  }
-  printf("[END]: Analysis completed.\n");
-  return;
-}

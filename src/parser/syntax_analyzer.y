@@ -14,6 +14,7 @@ extern int lines;
 extern char *yytext;
 extern int pos_end;
 extern int pos_start;
+extern FILE *yyin;
 
 // Global syntax tree
 syntax_tree *gt;
@@ -25,10 +26,15 @@ void yyerror(const char *s);
 syntax_tree_node *node(const char *node_name, int children_num, ...);
 %}
 
-/* TODO: Complete this definition. */
-%union {}
+%union {
+  syntax_tree_node *node
+}
 
-/* TODO: Your tokens here. */
+%token <node> ADD SUB MUL DIV LT LTE GT GTE EQ NEQ ASSIN SEMICOLON COMMA LPARENTHESE RPARENTHESE LBRACKET RBRACKET LBRACE RBRACE ELSE IF INT FLOAT RETURN VOID WHILE IDENTIFIER INTEGER FLOATPOINT ARRAY
+%type <node> program declaration-list declaration var-declaration type-specifier fun-declaration params param-list param compound-stmt local-declarations statement-list statement expression-stmt selection-stmt iteration-stmt return-stmt expression var simple-expression relop additive-expression addop term mulop factor integer float call args arg-list
+
+%left ADD SUB;
+%left MUL DIV;
 
 %start program
 
@@ -44,114 +50,114 @@ declaration:
 | fun-declaration {$$ = node("declaration", 1, $1);}
 ;
 var-declaration:
-  type-specifier ID ';' {$$ = node("var-declaration", 3, $1, node($2, 0), node(";", 0));};
-| type-specifier ID '[' INTEGER ']' ';' {$$ = node("var-declaration", 6, $1, node($2, 0), node("[", 0), $3, node("]", 0), node(";", 0));}
+  type-specifier IDENTIFIER SEMICOLON {$$ = node("var-declaration", 3, $1, $2, $3);};
+| type-specifier IDENTIFIER LBRACKET INTEGER RBRACKET SEMICOLON {$$ = node("var-declaration", 6, $1, $2, $3, $4, $5, $6);}
 ;
 type-specifier:
-  'int' {$$ = node("type-specifier", 1, node("int", 0));}
-| 'float' {$$ = node("type-specifier", 1, node("float", 0));}
-| 'void' {$$ = node("type-specifier", 1, node("void", 0));}
+  INT {$$ = node("type-specifier", 1, $1);}
+| FLOAT {$$ = node("type-specifier", 1, $1);}
+| VOID {$$ = node("type-specifier", 1, $1);}
 ;
-fun-declaration: type-specifier ID '(' params ')' compound-stmt {$$ = node("fun-declaration", 6, $1, node($2, 0), node("(", 0), $3, node(")", 0), $4);}
+fun-declaration: type-specifier IDENTIFIER LPARENTHESE params RPARENTHESE compound-stmt {$$ = node("fun-declaration", 6, $1, $2, $3, $4, $5, $6);}
 ;
 params:
   param-list {$$ = node("params", 1, $1);}
-| 'void' {$$ = node("params", 1, node("void", 0));}
+| VOID {$$ = node("params", 1, $1);}
 ;
 param-list:
-  param-list ',' param {$$ = node("param-list", 3, $1, node(",", 0), $2);}
-∣ param {$$ = node("param-list", 1, $1);}
+  param-list COMMA param {$$ = node("param-list", 3, $1, $2, $3);}
+| param {$$ = node("param-list", 1, $1);}
 ;
 param:
-  type-specifier ID {$$ = node("param", 2, $1, node($2, 0));}
-∣ type-specifier ID '[' ']' {$$ = node("param", 4, $1, node($2), node("[", 0), node("]", 0));}
+  type-specifier IDENTIFIER {$$ = node("param", 2, $1, $2);}
+| type-specifier IDENTIFIER ARRAY {$$ = node("param", 3, $1, $2, $3);}
 ;
-compound-stmt: '{' local-declarations statement-list '}' {$$ = node("compound-stmt", 4, node("(", 0), $1, $2, node(")", 0));}
+compound-stmt: LBRACE local-declarations statement-list RBRACE {$$ = node("compound-stmt", 4, $1, $2, $3, $4);}
 ;
 local-declarations:
   local-declarations var-declaration {$$ = node("local-declarations", 2, $1, $2);}
-∣ {$$ = node("local-declarations", 0);}
+| {$$ = node("local-declarations", 0);}
 ;
 statement-list:
   statement-list statement {$$ = node("statement-list", 2, $1, $2);}
-∣ {$$ = node("statement-list", 0);}
+| {$$ = node("statement-list", 0);}
 ;
 statement:
   expression-stmt {$$ = node("statement", 1, $1);}
-∣ compound-stmt {$$ = node("statement", 1, $1);}
-∣ selection-stmt {$$ = node("statement", 1, $1);}
-∣ iteration-stmt {$$ = node("statement", 1, $1);}
-∣ return-stmt {$$ = node("statement", 1, $1);}
-​;
+| compound-stmt {$$ = node("statement", 1, $1);}
+| selection-stmt {$$ = node("statement", 1, $1);}
+| iteration-stmt {$$ = node("statement", 1, $1);}
+| return-stmt {$$ = node("statement", 1, $1);}
+;
 expression-stmt:
-  expression ';' {$$ = node("expression-stmt", 2, $1, node(";", 0));}
-∣ ';' {$$ = node("expression-stmt", 1, node(";", 0));}
+  expression SEMICOLON {$$ = node("expression-stmt", 2, $1, $2);}
+| SEMICOLON {$$ = node("expression-stmt", 1, $1);}
 ;
 selection-stmt:
-  'if' '(' expression ')' statement {$$ = node("selection-stmt", 5, node("if", 0), node("(", 0), $1, node(")", 0), $2);}
-∣ 'if' '(' expression ')' statement ELSE statement {$$ = node("selection-stmt", 7, node("if", 0), node("(", 0), $1, node(")", 0), $2, node("else", 0), $3);}
-​;
-iteration-stmt: 'while' '(' expression ')' statement {$$ = node("iteration-stmt", 5, node("while", 0), node("(", 0), $1, node(")", 0), $2);}
+  IF LPARENTHESE expression RPARENTHESE statement {$$ = node("selection-stmt", 5, $1, $2, $3, $4, $5);}
+| IF LPARENTHESE expression RPARENTHESE statement ELSE statement {$$ = node("selection-stmt", 7, $1, $2, $3, $4, $5, $6, $7);}
+;
+iteration-stmt: WHILE LPARENTHESE expression RPARENTHESE statement {$$ = node("iteration-stmt", 5, $1, $2, $3, $4, $5);}
 ;
 return-stmt:
-  'return' ';' {$$ = node("return-stmt", 2, node("return", 0), node(";", 0));}
-∣ 'return' expression ';' {$$ = node("return-stmt", 3, node("return", 0), $1, node(";", 0));}
+  RETURN SEMICOLON {$$ = node("return-stmt", 2, $1, $2);}
+| RETURN expression SEMICOLON {$$ = node("return-stmt", 3, $1, $2, $3);}
 ;
 expression:
-  var '=' expression {$$ = node("expression", 3, $1, node("=", 0), $2);}
-∣ simple-expression {$$ = node("expression", 1, $1);}
+  var ASSIN expression {$$ = node("expression", 3, $1, $2, $3);}
+| simple-expression {$$ = node("expression", 1, $1);}
 ;
 var:
-  ID {$$ = node("var", 1, node($1, 0));}
-| ID [ expression ] {$$ = ("var", 4, node($1, 0), node("[", 0), $2, node("]", 0));}
+  IDENTIFIER {$$ = node("var", 1, $1);}
+| IDENTIFIER LBRACKET expression RBRACKET {$$ = node("var", 4, $1, $2, $3, $4);}
 ;
 simple-expression:
   additive-expression relop additive-expression {$$ = node("simple-expression", 3, $1, $2, $3);}
-∣ additive-expression {$$ = node("simple-expression", 1, $1);}
+| additive-expression {$$ = node("simple-expression", 1, $1);}
 ;
 relop:
- '<=' {$$ = node("relop", 1, node("<=", 0));}
-∣ '<' {$$ = node("relop", 1, node("<", 0));}
-∣ '>' {$$ = node("relop", 1, node(">", 0));}
-∣ '>=' {$$ = node("relop", 1, node(">=", 0));}
-∣ '==' {$$ = node("relop", 1, node("==", 0));}
-∣ '!=' {$$ = node("relop", 1, node("!=", 0));}
+ LTE {$$ = node("relop", 1, $1);}
+| LT {$$ = node("relop", 1, $1);}
+| GTE {$$ = node("relop", 1, $1);}
+| GT {$$ = node("relop", 1, $1);}
+| EQ {$$ = node("relop", 1, $1);}
+| NEQ {$$ = node("relop", 1, $1);}
 ;
 additive-expression:
   additive-expression addop term {$$ = node("additive-expression", 3, $1, $2, $3);}
-∣ term {$$ = ndoe("additive-expression", 1, $1);}
+| term {$$ = node("additive-expression", 1, $1);}
 ;
 addop:
-  '+' {$$ = node("addop", 1, node("+", 0));}
-| '-' {$$ = node("addop", 1, node("-", 0));}
+  ADD {$$ = node("addop", 1, $1);}
+| SUB {$$ = node("addop", 1, $1);}
 ;
 term:
   term mulop factor {$$ = node("term", 3, $1, $2, $3);}
-∣ factor {$$ = node("term", 1, $1);}
+| factor {$$ = node("term", 1, $1);}
 ;
 mulop:
-  '*' {$$ = ndoe("mulop", 1, node("*", 0));}
-| '/' {$$ = ndoe("mulop", 1, node("/", 0));}
+  MUL {$$ = node("mulop", 1, $1);}
+| DIV {$$ = node("mulop", 1, $1);}
 ;
 factor:
-  '(' expression ')' {$$ = node("factor", 3, node("(", 0), $1, node(")", 0));}
+  LPARENTHESE expression RPARENTHESE {$$ = node("factor", 3, $1, $2, $3);}
 | var {$$ = node("factor", 1, $1);}
 | call {$$ = node("factor", 1, $1);}
 | integer {$$ = node("factor", 1, $1);}
 | float {$$ = node("factor", 1, $1);}
 ;
-integer: INTEGER {$$ = node("integer", 1, node($1, 0));}
+integer: INTEGER {$$ = node("integer", 1, $1);}
 ;
-float: FLOATPOINT {$$ = node("float", 1, node($1, 0));}
+float: FLOATPOINT {$$ = node("float", 1, $1);}
 ;
-call: ID '(' args ')' {$$ = node("call", 4, node($1, 0), node("(", 0), $1, node(")", 0));}
+call: IDENTIFIER LPARENTHESE args RPARENTHESE {$$ = node("call", 4, $1, $2, $3, $4);}
 ;
 args:
   arg-list {$$ = node("args", 1, $1);}
 | {$$ = node("args", 0);}
 ;
 arg-list:
-  arg-list ',' expression {$$ = node("arg-list", 3, $1, node(",", 0), $2);}
+  arg-list COMMA expression {$$ = node("arg-list", 3, $1, $2, $3);}
 | expression {$$ = node("arg-list", 1, $1);}
 ;
 %%
