@@ -47,9 +47,9 @@ void enter();
 // 退出一个作用域
 void exit();
 // 往当前作用域插入新的名字->值映射
-bool push(std::string name, llvm::Value *val);
+bool push(std::string name, Value *val);
 // 根据名字，寻找到值
-llvm::Value* find(std::string name);
+Value* find(std::string name);
 // 判断当前是否在全局作用域内
 bool in_global();
 ```
@@ -67,7 +67,7 @@ make -j
 make install
 ```
 
-编译后会产生 `cminusfc` 程序，它能将cminus文件输出为LLVM IR，也可以利用clang将IR编译成二进制。程序逻辑写在`src/cminusfc/main.cpp`中。
+编译后会产生 `cminusfc` 程序，它能将cminus文件输出为LLVM IR，也可以利用clang将IR编译成二进制。程序逻辑写在`src/cminusfc/cminusfc.cpp`中。
 
 当需要对 `.cminus` 文件测试时，可以这样使用：
 
