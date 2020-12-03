@@ -1,14 +1,31 @@
 #include "cminusf_builder.hpp"
 
-// use these macros to get constant value
-#define CONST_FP(num) \
-    ConstantFP::get((float)num, module.get())
-#define CONST_ZERO(type) \
-    ConstantZero::get(var_type, module.get())
+#include "logging.hpp"
 
+// use these macros to get constant value
+#define CONST_INT(num) ConstantInt::get((int)num, module.get())
+#define CONST_FP(num) ConstantFP::get((float)num, module.get())
+#define CONST_ZERO(type) ConstantZero::get(type, module.get())
 
 // You can define global variables here
 // to store state
+
+// Assigned by ASTNum visit.
+Type *numType;
+
+// Assigned by ASTParam visit.
+Type *paramType;
+
+Type *cminusType2Type(CminusType type, Module *module) {
+    switch (type) {
+        case CminusType::TYPE_INT:
+            return Type::get_int32_type(module);
+        case CminusType::TYPE_FLOAT:
+            return Type::get_float_type(module);
+        default:
+            return Type::get_void_type(module);
+    }
+}
 
 /*
  * use CMinusfBuilder::Scope to construct scopes
@@ -18,34 +35,140 @@
  * scope.find: find and return the value bound to the name
  */
 
-void CminusfBuilder::visit(ASTProgram &node) { }
+// Loop over declarations to accept.
+//
+// `main` func return type is checked,
+// but its param type check is delayed to ASTFunDeclaration visit.
+void CminusfBuilder::visit(ASTProgram &node) {
+    if (node.declarations.size() == 0) {
+        LOG(ERROR) << "At least one declaration is required in a program";
+        exit(1);
+    }
 
-void CminusfBuilder::visit(ASTNum &node) { }
+    auto lastDeclaration = node.declarations.back();
+    if (lastDeclaration->id != "main" ||
+        lastDeclaration->type != CminusType::TYPE_VOID) {
+        LOG(ERROR)
+            << "The last declaration in a program should be void main(void)";
+        exit(1);
+    }
 
-void CminusfBuilder::visit(ASTVarDeclaration &node) { }
+    for (const auto &declaration : node.declarations) {
+        declaration->accept(*this);
+    }
+}
 
-void CminusfBuilder::visit(ASTFunDeclaration &node) { }
+// Gen `Type *` from int/float.
+//
+// Manipulating builder is made by upper visit.
+void CminusfBuilder::visit(ASTNum &node) {
+    switch (node.type) {
+        case CminusType::TYPE_INT:
+            numType = IntegerType::get(32, module.get());
+            break;
+        case CminusType::TYPE_FLOAT:
+            numType = FloatType::get(module.get());
+            break;
+        default:
+            LOG(ERROR) << "Unexpected number type: void";
+            exit(1);
+    }
+}
 
-void CminusfBuilder::visit(ASTParam &node) { }
+// Handle scope.
+void CminusfBuilder::visit(ASTVarDeclaration &node) {
+    if (scope.find(node.id)) {
+        LOG(ERROR) << "Redeclare variable: " << node.id;
+        exit(1);
+    }
 
-void CminusfBuilder::visit(ASTCompoundStmt &node) { }
+    Type *type;
+    switch (node.type) {
+        case CminusType::TYPE_INT:
+            type = Type::get_int32_type(module.get());
+            break;
+        case CminusType::TYPE_FLOAT:
+            type = Type::get_float_type(module.get());
+            break;
+        default:
+            LOG(ERROR) << "Unexpected variable type: void";
+            exit(1);
+    }
 
-void CminusfBuilder::visit(ASTExpressionStmt &node) { }
+    // Detect array type.
+    if (node.num) {
+        node.num->accept(*this);
 
-void CminusfBuilder::visit(ASTSelectionStmt &node) { }
+        if (!numType->is_integer_type()) {
+            LOG(ERROR) << "Unexpected index type for array: "
+                       << numType->print();
+            exit(1);
+        }
 
-void CminusfBuilder::visit(ASTIterationStmt &node) { }
+        if (node.num->i_val < 0) {
+            LOG(ERROR) << "Unexpected index type for array: "
+                       << numType->print();
+            exit(1);
+        }
 
-void CminusfBuilder::visit(ASTReturnStmt &node) { }
+        type = Type::get_array_type(type, node.num->i_val);
+    }
 
-void CminusfBuilder::visit(ASTVar &node) { }
+    auto var = builder->create_alloca(type);
+    builder->create_store(CONST_ZERO(type), var);
+    scope.push(node.id, var);
+}
 
-void CminusfBuilder::visit(ASTAssignExpression &node) { }
+void CminusfBuilder::visit(ASTFunDeclaration &node) {
+    if (scope.find(node.id)) {
+        LOG(ERROR) << "Redeclare function: " << node.id;
+        exit(1);
+    }
 
-void CminusfBuilder::visit(ASTSimpleExpression &node) { }
+    if (node.id == "main" && node.params.size() != 0) {
+        LOG(ERROR) << "main function should have 0 params";
+        exit(1);
+    }
 
-void CminusfBuilder::visit(ASTAdditiveExpression &node) { }
+    auto paramTypes = std::vector<Type *>{};
+    for (const auto &param : node.params) {
+        param->accept(*this);
+        paramTypes.push_back(paramType);
+    }
 
-void CminusfBuilder::visit(ASTTerm &node) { }
+    auto type =
+        FunctionType::get(cminusType2Type(node.type, module.get()), paramTypes);
+    auto func = Function::create(type, node.id, module.get());
+    scope.push(node.id, func);
+    scope.enter();
 
-void CminusfBuilder::visit(ASTCall &node) { }
+    auto parent_bb = builder->get_insert_block();
+    auto bb = BasicBlock::create(module.get(), node.id, func);
+    builder->set_insert_point(bb);
+    node.compound_stmt->accept(*this);
+    builder->set_insert_point(parent_bb);
+}
+
+void CminusfBuilder::visit(ASTParam &node) {}
+
+void CminusfBuilder::visit(ASTCompoundStmt &node) {}
+
+void CminusfBuilder::visit(ASTExpressionStmt &node) {}
+
+void CminusfBuilder::visit(ASTSelectionStmt &node) {}
+
+void CminusfBuilder::visit(ASTIterationStmt &node) {}
+
+void CminusfBuilder::visit(ASTReturnStmt &node) {}
+
+void CminusfBuilder::visit(ASTVar &node) {}
+
+void CminusfBuilder::visit(ASTAssignExpression &node) {}
+
+void CminusfBuilder::visit(ASTSimpleExpression &node) {}
+
+void CminusfBuilder::visit(ASTAdditiveExpression &node) {}
+
+void CminusfBuilder::visit(ASTTerm &node) {}
+
+void CminusfBuilder::visit(ASTCall &node) {}
