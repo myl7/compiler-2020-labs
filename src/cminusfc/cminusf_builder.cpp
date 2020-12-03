@@ -13,9 +13,6 @@
 // Assigned by ASTNum visit.
 Type *numType;
 
-// Assigned by ASTParam visit.
-Type *paramType;
-
 Type *cminusType2Type(CminusType type, Module *module) {
     switch (type) {
         case CminusType::TYPE_INT:
@@ -24,6 +21,18 @@ Type *cminusType2Type(CminusType type, Module *module) {
             return Type::get_float_type(module);
         default:
             return Type::get_void_type(module);
+    }
+}
+
+Type *cminusType2TypeExceptVoid(CminusType type, Module *module, const std::string &voidErrMsg) {
+    switch (type) {
+        case CminusType::TYPE_INT:
+            return Type::get_int32_type(module);
+        case CminusType::TYPE_FLOAT:
+            return Type::get_float_type(module);
+        default:
+            LOG(ERROR) << voidErrMsg;
+            exit(1);
     }
 }
 
@@ -46,10 +55,8 @@ void CminusfBuilder::visit(ASTProgram &node) {
     }
 
     auto lastDeclaration = node.declarations.back();
-    if (lastDeclaration->id != "main" ||
-        lastDeclaration->type != CminusType::TYPE_VOID) {
-        LOG(ERROR)
-            << "The last declaration in a program should be void main(void)";
+    if (lastDeclaration->id != "main" || lastDeclaration->type != CminusType::TYPE_VOID) {
+        LOG(ERROR) << "The last declaration in a program should be void main(void)";
         exit(1);
     }
 
@@ -62,52 +69,23 @@ void CminusfBuilder::visit(ASTProgram &node) {
 //
 // Manipulating builder is made by upper visit.
 void CminusfBuilder::visit(ASTNum &node) {
-    switch (node.type) {
-        case CminusType::TYPE_INT:
-            numType = IntegerType::get(32, module.get());
-            break;
-        case CminusType::TYPE_FLOAT:
-            numType = FloatType::get(module.get());
-            break;
-        default:
-            LOG(ERROR) << "Unexpected number type: void";
-            exit(1);
-    }
+    numType = cminusType2TypeExceptVoid(node.type, module.get(), "Unexpected number type: void");
 }
 
-// Handle scope.
 void CminusfBuilder::visit(ASTVarDeclaration &node) {
-    if (scope.find(node.id)) {
-        LOG(ERROR) << "Redeclare variable: " << node.id;
-        exit(1);
-    }
-
-    Type *type;
-    switch (node.type) {
-        case CminusType::TYPE_INT:
-            type = Type::get_int32_type(module.get());
-            break;
-        case CminusType::TYPE_FLOAT:
-            type = Type::get_float_type(module.get());
-            break;
-        default:
-            LOG(ERROR) << "Unexpected variable type: void";
-            exit(1);
-    }
+    auto type = cminusType2TypeExceptVoid(node.type, module.get(), "Unexpected variable type: void");
 
     // Detect array type.
     if (node.num) {
         node.num->accept(*this);
 
         if (!numType->is_integer_type()) {
-            LOG(ERROR) << "Unexpected index type for array: "
-                       << numType->print();
+            LOG(ERROR) << "Unexpected index type for array: " << numType->print();
             exit(1);
         }
 
         if (node.num->i_val < 0) {
-            LOG(ERROR) << "Unexpected index type for array: "
-                       << numType->print();
+            LOG(ERROR) << "Unexpected index type for array: " << numType->print();
             exit(1);
         }
 
@@ -116,15 +94,14 @@ void CminusfBuilder::visit(ASTVarDeclaration &node) {
 
     auto var = builder->create_alloca(type);
     builder->create_store(CONST_ZERO(type), var);
-    scope.push(node.id, var);
+
+    if (!scope.push(node.id, var)) {
+        LOG(ERROR) << "Redeclare variable: " << node.id;
+        exit(1);
+    }
 }
 
 void CminusfBuilder::visit(ASTFunDeclaration &node) {
-    if (scope.find(node.id)) {
-        LOG(ERROR) << "Redeclare function: " << node.id;
-        exit(1);
-    }
-
     if (node.id == "main" && node.params.size() != 0) {
         LOG(ERROR) << "main function should have 0 params";
         exit(1);
@@ -132,24 +109,47 @@ void CminusfBuilder::visit(ASTFunDeclaration &node) {
 
     auto paramTypes = std::vector<Type *>{};
     for (const auto &param : node.params) {
-        param->accept(*this);
+        auto paramType = cminusType2TypeExceptVoid(param->type, module.get(), "Unexpected variable type: void");
+        if (param->isarray) {
+            paramType = Type::get_pointer_type(paramType);
+        }
         paramTypes.push_back(paramType);
     }
 
-    auto type =
-        FunctionType::get(cminusType2Type(node.type, module.get()), paramTypes);
+    auto type = FunctionType::get(cminusType2Type(node.type, module.get()), paramTypes);
     auto func = Function::create(type, node.id, module.get());
-    scope.push(node.id, func);
+
+    if (!scope.push(node.id, func)) {
+        LOG(ERROR) << "Redeclare function: " << node.id;
+        exit(1);
+    }
     scope.enter();
 
     auto parent_bb = builder->get_insert_block();
     auto bb = BasicBlock::create(module.get(), node.id, func);
     builder->set_insert_point(bb);
+
+    for (const auto &param : node.params) {
+        param->accept(*this);
+    }
     node.compound_stmt->accept(*this);
+
     builder->set_insert_point(parent_bb);
+    scope.exit();
 }
 
-void CminusfBuilder::visit(ASTParam &node) {}
+void CminusfBuilder::visit(ASTParam &node) {
+    auto type = cminusType2TypeExceptVoid(node.type, module.get(), "Unexpected param type: void");
+    if (node.isarray) {
+        type = Type::get_pointer_type(type);
+    }
+
+    auto param = builder->create_alloca(type);
+    if (!scope.push(node.id, param)) {
+        LOG(ERROR) << "Redeclare param: " << node.id;
+        exit(1);
+    }
+}
 
 void CminusfBuilder::visit(ASTCompoundStmt &node) {}
 
