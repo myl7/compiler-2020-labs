@@ -9,6 +9,8 @@
 
 // You can define global variables here
 // to store state
+bool is_returned = false;
+bool is_returned_record = false;
 
 // Assigned by ASTNum visit.
 Type *numType;
@@ -83,11 +85,12 @@ void CminusfBuilder::visit(ASTProgram &node)
 }
 
 // Gen `Type *` from int/float.
-//
+// TODO add expression
 // Manipulating builder is made by upper visit.
 void CminusfBuilder::visit(ASTNum &node)
 {
     numType = cminusType2TypeExceptVoid(node.type, module.get(), "Unexpected number type: void");
+    // expression = ConstantInt::get(context, CONST_INT(node.i_val));
 }
 
 void CminusfBuilder::visit(ASTVarDeclaration &node)
@@ -183,9 +186,45 @@ void CminusfBuilder::visit(ASTParam &node)
     }
 }
 
-void CminusfBuilder::visit(ASTCompoundStmt &node) {}
+void CminusfBuilder::visit(ASTCompoundStmt &node)
+{
+    scope.enter();
+    for (auto var_declaration : node.local_declarations)
+    {
+        if (var_declaration->type == TYPE_VOID)
+        {
+            std::cout << "Error: no void type variable or array is allowed!" << std::endl;
+        }
+        // array declaration
+        if (var_declaration->num != nullptr)
+        {
+            auto arrType = ArrayType::get_int32_type(module.get());
+            auto arrptr = builder->create_alloca(arrType);
+            scope.push(var_declaration->id, arrptr);
+        }
+        // normal variable declaration
+        else
+        {
+            // auto var = builder->create_alloca(Type::get_int32_type(context));
+            // scope.push(var_declaration->id, var);
+        }
+    }
+    is_returned = false;
+    for (auto stmt : node.statement_list)
+    {
+        stmt->accept(*this);
+        if (is_returned)
+            break;
+    }
+    is_returned_record = is_returned;
+    is_returned = false;
+    scope.exit();
+}
 
-void CminusfBuilder::visit(ASTExpressionStmt &node) {}
+void CminusfBuilder::visit(ASTExpressionStmt &node)
+{
+    node.expression->accept(*this);
+}
 
 void CminusfBuilder::visit(ASTSelectionStmt &node) {}
 
@@ -246,4 +285,19 @@ void CminusfBuilder::visit(ASTAdditiveExpression &node)
 
 void CminusfBuilder::visit(ASTTerm &node) {}
 
-void CminusfBuilder::visit(ASTCall &node) {}
+void CminusfBuilder::visit(ASTCall &node)
+{
+    auto func = scope.find(node.id);
+    if (func == nullptr)
+    {
+        std::cout << "ERROR: Unknown function: " << node.id << std::endl;
+        exit(1);
+    }
+    std::vector<Value *> args;
+    for (auto arg : node.args)
+    {
+        arg->accept(*this);
+        args.push_back(expression);
+    }
+    expression = builder->create_call(func, args);
+}
