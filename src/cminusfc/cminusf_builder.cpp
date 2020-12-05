@@ -11,10 +11,11 @@
 // to store state
 bool is_returned = false;
 bool is_returned_record = false;
+BasicBlock* return_block;
 
-// Assigned by ASTNum visit.
 Type *numType;
 Value *expression;
+Value* return_alloca;
 
 enum var_op
 {
@@ -193,11 +194,12 @@ void CminusfBuilder::visit(ASTCompoundStmt &node)
     {
         if (var_declaration->type == TYPE_VOID)
         {
-            std::cout << "Error: no void type variable or array is allowed!" << std::endl;
+            std::cout << "Error no void type variable or array is allowed" << std::endl;
         }
         // array declaration
         if (var_declaration->num != nullptr)
         {
+            // TODO add f or i
             auto arrType = ArrayType::get_int32_type(module.get());
             auto arrptr = builder->create_alloca(arrType);
             scope.push(var_declaration->id, arrptr);
@@ -230,7 +232,34 @@ void CminusfBuilder::visit(ASTSelectionStmt &node) {}
 
 void CminusfBuilder::visit(ASTIterationStmt &node) {}
 
-void CminusfBuilder::visit(ASTReturnStmt &node) {}
+void CminusfBuilder::visit(ASTReturnStmt &node)
+{
+    if (node.expression != nullptr)
+    {
+        curr_op = LOAD;
+        node.expression->accept(*this);
+        Value *retVal;
+        // TODO add f or i
+        if (expression->get_type() == Type::get_int32_type(module.get()))
+        {
+            // cast i1 boolean true or false result to i32 0 or 1
+            auto retCast = builder->create_zext(expression, Type::get_int32_type(module.get()));
+            retVal = retCast;
+        }
+        else if (expression->get_type() == Type::get_int32_type(module.get()))
+        {
+            retVal = expression;
+        }
+        else
+        {
+            std::cout << "Error unknown expression return type" << std::endl;
+        }
+        builder->create_store(retVal, return_alloca);
+    }
+    builder->create_br(return_block);
+    is_returned = true;
+    is_returned_record = true;
+}
 
 void CminusfBuilder::visit(ASTVar &node) {}
 
@@ -248,6 +277,7 @@ void CminusfBuilder::visit(ASTAdditiveExpression &node)
     else
     {
         bool haveF = false;
+        // TODO add f or i
         curr_op = LOAD;
         node.additive_expression->accept(*this);
         // numType->get_int32_type();
