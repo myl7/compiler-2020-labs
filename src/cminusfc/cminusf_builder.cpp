@@ -1,5 +1,4 @@
 #include "cminusf_builder.hpp"
-
 #include "logging.hpp"
 
 // use these macros to get constant value
@@ -94,7 +93,17 @@ void CminusfBuilder::visit(ASTProgram &node)
 void CminusfBuilder::visit(ASTNum &node)
 {
     numType = cminusType2TypeExceptVoid(node.type, module.get(), "Unexpected number type: void");
-    // expression = ConstantInt::get(context, CONST_INT(node.i_val));
+    switch (node.type)
+    {
+    TYPE_INT:
+        expression = CONST_INT(node.i_val);
+        break;
+    TYPE_FLOAT:
+        expression = CONST_FP(node.f_val);
+        break;
+    default:
+        return;
+    }
 }
 
 void CminusfBuilder::visit(ASTVarDeclaration &node)
@@ -273,12 +282,14 @@ void CminusfBuilder::visit(ASTVar &node)
         exit(1);
     }
 
-    if (node.expression) {
+    if (node.expression)
+    {
         node.expression->accept(*this);
         auto expr = expression;
 
         // TODO: Edge checking.
-        if (expr->get_type()->is_float_type()) {
+        if (expr->get_type()->is_float_type())
+        {
             // TODO: cast to int.
         }
 
@@ -288,7 +299,8 @@ void CminusfBuilder::visit(ASTVar &node)
     expression = val;
 }
 
-void CminusfBuilder::visit(ASTAssignExpression &node) {
+void CminusfBuilder::visit(ASTAssignExpression &node)
+{
     node.var->accept(*this);
     auto var = expression;
 
@@ -300,8 +312,10 @@ void CminusfBuilder::visit(ASTAssignExpression &node) {
     expression = builder->create_store(expr, var);
 }
 
-void CminusfBuilder::visit(ASTSimpleExpression &node) {
-    if (node.additive_expression_r) {
+void CminusfBuilder::visit(ASTSimpleExpression &node)
+{
+    if (node.additive_expression_r)
+    {
         // It is a relop expr.
         node.additive_expression_l->accept(*this);
         auto lRes = expression;
@@ -310,27 +324,30 @@ void CminusfBuilder::visit(ASTSimpleExpression &node) {
 
         // TODO: cast.
         // Currently, to sleep early, we only consider int case.
-        switch (node.op) {
-            case OP_LE:
-                expression = builder->create_icmp_le(lRes, rRes);
-                break;
-            case OP_LT:
-                expression = builder->create_icmp_lt(lRes, rRes);
-                break;
-            case OP_GT:
-                expression = builder->create_icmp_gt(lRes, rRes);
-                break;
-            case OP_GE:
-                expression = builder->create_icmp_ge(lRes, rRes);
-                break;
-            case OP_EQ:
-                expression = builder->create_icmp_eq(lRes, rRes);
-                break;
-            default:
-                expression = builder->create_icmp_ne(lRes, rRes);
-                break;
+        switch (node.op)
+        {
+        case OP_LE:
+            expression = builder->create_icmp_le(lRes, rRes);
+            break;
+        case OP_LT:
+            expression = builder->create_icmp_lt(lRes, rRes);
+            break;
+        case OP_GT:
+            expression = builder->create_icmp_gt(lRes, rRes);
+            break;
+        case OP_GE:
+            expression = builder->create_icmp_ge(lRes, rRes);
+            break;
+        case OP_EQ:
+            expression = builder->create_icmp_eq(lRes, rRes);
+            break;
+        default:
+            expression = builder->create_icmp_ne(lRes, rRes);
+            break;
         }
-    } else {
+    }
+    else
+    {
         node.additive_expression_l->accept(*this);
     }
 }
@@ -345,13 +362,12 @@ void CminusfBuilder::visit(ASTAdditiveExpression &node)
     else
     {
         bool haveF = false;
-        // TODO add f or i
         curr_op = LOAD;
         node.additive_expression->accept(*this);
-        // numType->get_int32_type();
+        haveF = expression->get_type()->is_float_type() ? true : haveF;
         Value *lhs = expression;
         curr_op = LOAD;
-        // numType->get_int32_type();
+        haveF = expression->get_type()->is_float_type() ? true : haveF;
         node.term->accept(*this);
         Value *rhs = expression;
         switch (node.op)
@@ -367,7 +383,6 @@ void CminusfBuilder::visit(ASTAdditiveExpression &node)
             }
             break;
         case OP_MINUS:
-
             if (haveF)
             {
                 expression = builder->create_fsub(lhs, rhs);
