@@ -268,9 +268,67 @@ void CminusfBuilder::visit(ASTExpressionStmt &node)
     node.expression->accept(*this);
 }
 
-void CminusfBuilder::visit(ASTSelectionStmt &node) {}
+void CminusfBuilder::visit(ASTSelectionStmt &node) {
+    node.expression->accept(*this);
+    auto cond = expr;
+    auto type = cond->get_type();
+    if (type->is_integer_type()) {
+        auto boolType = (IntegerType *)type;
+        auto bitNum = boolType->get_num_bits();
+        if (bitNum != 1) {
+            cond = builder->create_zext(cond, Type::get_int1_type(module.get()));
+        }
+    } else {
+        cond = builder->create_zext(cond, Type::get_int1_type(module.get()));
+    }
 
-void CminusfBuilder::visit(ASTIterationStmt &node) {}
+    auto tBB = BasicBlock::create(module.get(), "", builder->get_insert_block()->get_parent());
+    auto fBB = BasicBlock::create(module.get(), "", builder->get_insert_block()->get_parent());
+    auto BB = BasicBlock::create(module.get(), "", builder->get_insert_block()->get_parent());
+    builder->create_cond_br(cond, tBB, fBB);
+    builder->set_insert_point(tBB);
+    scope.enter();
+    node.if_statement->accept(*this);
+    scope.exit();
+    builder->create_br(BB);
+    builder->set_insert_point(fBB);
+    if (node.else_statement) {
+        scope.enter();
+        node.else_statement->accept(*this);
+        scope.exit();
+    }
+    builder->create_br(BB);
+    builder->set_insert_point(BB);
+}
+
+void CminusfBuilder::visit(ASTIterationStmt &node) {
+    auto condBB = BasicBlock::create(module.get(), "", builder->get_insert_block()->get_parent());
+    auto tBB = BasicBlock::create(module.get(), "", builder->get_insert_block()->get_parent());
+    auto fBB = BasicBlock::create(module.get(), "", builder->get_insert_block()->get_parent());
+
+    builder->create_br(condBB);
+    node.expression->accept(*this);
+    auto cond = expr;
+    auto type = cond->get_type();
+    if (type->is_integer_type()) {
+        auto boolType = (IntegerType *)type;
+        auto bitNum = boolType->get_num_bits();
+        if (bitNum != 1) {
+            cond = builder->create_zext(cond, Type::get_int1_type(module.get()));
+        }
+    } else {
+        cond = builder->create_zext(cond, Type::get_int1_type(module.get()));
+    }
+    builder->create_cond_br(cond, tBB, fBB);
+
+    builder->set_insert_point(tBB);
+    scope.enter();
+    node.statement->accept(*this);
+    scope.exit();
+    builder->create_br(condBB);
+
+    builder->set_insert_point(fBB);
+}
 
 void CminusfBuilder::visit(ASTReturnStmt &node)
 {
