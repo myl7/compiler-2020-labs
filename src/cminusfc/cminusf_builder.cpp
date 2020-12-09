@@ -15,7 +15,7 @@ BasicBlock *return_block;
 Type *numType;
 
 // After computation, Value * and its type are returned here.
-Value *expression;
+Value *expr;
 
 Value *return_alloca;
 
@@ -96,10 +96,10 @@ void CminusfBuilder::visit(ASTNum &node)
     switch (node.type)
     {
     TYPE_INT:
-        expression = CONST_INT(node.i_val);
+        expr = CONST_INT(node.i_val);
         break;
     TYPE_FLOAT:
-        expression = CONST_FP(node.f_val);
+        expr = CONST_FP(node.f_val);
         break;
     default:
         return;
@@ -252,15 +252,15 @@ void CminusfBuilder::visit(ASTReturnStmt &node)
         node.expression->accept(*this);
         Value *retVal;
         // TODO add f or i
-        if (expression->get_type() == Type::get_int32_type(module.get()))
+        if (expr->get_type() == Type::get_int32_type(module.get()))
         {
             // cast i1 boolean true or false result to i32 0 or 1
-            auto retCast = builder->create_zext(expression, Type::get_int32_type(module.get()));
+            auto retCast = builder->create_zext(expr, Type::get_int32_type(module.get()));
             retVal = retCast;
         }
-        else if (expression->get_type() == Type::get_int32_type(module.get()))
+        else if (expr->get_type() == Type::get_int32_type(module.get()))
         {
-            retVal = expression;
+            retVal = expr;
         }
         else
         {
@@ -285,7 +285,7 @@ void CminusfBuilder::visit(ASTVar &node)
     if (node.expression)
     {
         node.expression->accept(*this);
-        auto expr = expression;
+        auto expr = expr;
 
         // TODO: Edge checking.
         if (expr->get_type()->is_float_type())
@@ -296,20 +296,20 @@ void CminusfBuilder::visit(ASTVar &node)
         Value *val = builder->create_gep(val, {CONST_ZERO(Type::get_int32_type(module.get())), expr});
     }
 
-    expression = val;
+    expr = val;
 }
 
 void CminusfBuilder::visit(ASTAssignExpression &node)
 {
     node.var->accept(*this);
-    auto var = expression;
+    auto var = expr;
 
     node.expression->accept(*this);
-    auto expr = expression;
+    auto expr = expr;
 
     // TODO: cast type.
     // TODO: Does create_store returns stored val?
-    expression = builder->create_store(expr, var);
+    expr = builder->create_store(expr, var);
 }
 
 void CminusfBuilder::visit(ASTSimpleExpression &node)
@@ -318,31 +318,31 @@ void CminusfBuilder::visit(ASTSimpleExpression &node)
     {
         // It is a relop expr.
         node.additive_expression_l->accept(*this);
-        auto lRes = expression;
+        auto lRes = expr;
         node.additive_expression_r->accept(*this);
-        auto rRes = expression;
+        auto rRes = expr;
 
         // TODO: cast.
         // Currently, to sleep early, we only consider int case.
         switch (node.op)
         {
         case OP_LE:
-            expression = builder->create_icmp_le(lRes, rRes);
+            expr = builder->create_icmp_le(lRes, rRes);
             break;
         case OP_LT:
-            expression = builder->create_icmp_lt(lRes, rRes);
+            expr = builder->create_icmp_lt(lRes, rRes);
             break;
         case OP_GT:
-            expression = builder->create_icmp_gt(lRes, rRes);
+            expr = builder->create_icmp_gt(lRes, rRes);
             break;
         case OP_GE:
-            expression = builder->create_icmp_ge(lRes, rRes);
+            expr = builder->create_icmp_ge(lRes, rRes);
             break;
         case OP_EQ:
-            expression = builder->create_icmp_eq(lRes, rRes);
+            expr = builder->create_icmp_eq(lRes, rRes);
             break;
         default:
-            expression = builder->create_icmp_ne(lRes, rRes);
+            expr = builder->create_icmp_ne(lRes, rRes);
             break;
         }
     }
@@ -364,32 +364,32 @@ void CminusfBuilder::visit(ASTAdditiveExpression &node)
         bool haveF = false;
         curr_op = LOAD;
         node.additive_expression->accept(*this);
-        haveF = expression->get_type()->is_float_type() ? true : haveF;
-        Value *lhs = expression;
+        haveF = expr->get_type()->is_float_type() ? true : haveF;
+        Value *lhs = expr;
         curr_op = LOAD;
-        haveF = expression->get_type()->is_float_type() ? true : haveF;
+        haveF = expr->get_type()->is_float_type() ? true : haveF;
         node.term->accept(*this);
-        Value *rhs = expression;
+        Value *rhs = expr;
         switch (node.op)
         {
         case OP_PLUS:
             if (haveF)
             {
-                expression = builder->create_fadd(lhs, rhs);
+                expr = builder->create_fadd(lhs, rhs);
             }
             else
             {
-                expression = builder->create_iadd(lhs, rhs);
+                expr = builder->create_iadd(lhs, rhs);
             }
             break;
         case OP_MINUS:
             if (haveF)
             {
-                expression = builder->create_fsub(lhs, rhs);
+                expr = builder->create_fsub(lhs, rhs);
             }
             else
             {
-                expression = builder->create_isub(lhs, rhs);
+                expr = builder->create_isub(lhs, rhs);
             }
             break;
         }
@@ -403,12 +403,12 @@ void CminusfBuilder::visit(ASTAdditiveExpression &node)
 void CminusfBuilder::visit(ASTTerm &node)
 {
     node.term->accept(*this);
-    auto lRes = expression;
-    auto lType = expression->get_type();
+    auto lRes = expr;
+    auto lType = expr->get_type();
 
     node.factor->accept(*this);
-    auto rRes = expression;
-    auto rType = expression->get_type();
+    auto rRes = expr;
+    auto rType = expr->get_type();
 
     if (lType->is_integer_type())
     {
@@ -417,22 +417,22 @@ void CminusfBuilder::visit(ASTTerm &node)
             // TODO: Cast required.
             if (node.op == OP_MUL)
             {
-                expression = builder->create_fmul(lRes, rRes);
+                expr = builder->create_fmul(lRes, rRes);
             }
             else
             {
-                expression = builder->create_fdiv(lRes, rRes);
+                expr = builder->create_fdiv(lRes, rRes);
             }
         }
         else
         {
             if (node.op == OP_MUL)
             {
-                expression = builder->create_imul(lRes, rRes);
+                expr = builder->create_imul(lRes, rRes);
             }
             else
             {
-                expression = builder->create_isdiv(lRes, rRes);
+                expr = builder->create_isdiv(lRes, rRes);
             }
         }
     }
@@ -442,11 +442,11 @@ void CminusfBuilder::visit(ASTTerm &node)
         {
             if (node.op == OP_MUL)
             {
-                expression = builder->create_fmul(lRes, rRes);
+                expr = builder->create_fmul(lRes, rRes);
             }
             else
             {
-                expression = builder->create_fdiv(lRes, rRes);
+                expr = builder->create_fdiv(lRes, rRes);
             }
         }
         else
@@ -454,11 +454,11 @@ void CminusfBuilder::visit(ASTTerm &node)
             // TODO: Cast required.
             if (node.op == OP_MUL)
             {
-                expression = builder->create_fmul(lRes, rRes);
+                expr = builder->create_fmul(lRes, rRes);
             }
             else
             {
-                expression = builder->create_fdiv(lRes, rRes);
+                expr = builder->create_fdiv(lRes, rRes);
             }
         }
     }
@@ -476,7 +476,7 @@ void CminusfBuilder::visit(ASTCall &node)
     for (auto arg : node.args)
     {
         arg->accept(*this);
-        args.push_back(expression);
+        args.push_back(expr);
     }
-    expression = builder->create_call(func, args);
+    expr = builder->create_call(func, args);
 }
