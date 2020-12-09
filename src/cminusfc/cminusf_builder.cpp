@@ -54,34 +54,6 @@ Type *cminusType2TypeExceptVoid(CminusType type, Module *module, const std::stri
     }
 }
 
-Value *castWhenBinOpRequire(Value *a, Value *b, Value *i(Value *, Value *), Value *f(Value *, Value *), IRBuilder *builder, Module *module)
-{
-    if (a->get_type()->is_float_type())
-    {
-        if (b->get_type()->is_float_type())
-        {
-            return f(a, b);
-        }
-        else
-        {
-            auto bCast = builder->create_zext(b, Type::get_float_type(module));
-            return f(a, bCast);
-        }
-    }
-    else
-    {
-        if (b->get_type()->is_float_type())
-        {
-            auto aCast = builder->create_zext(a, Type::get_float_type(module));
-            return f(aCast, b);
-        }
-        else
-        {
-            return i(a, b);
-        }
-    }
-}
-
 /*
  * use CMinusfBuilder::Scope to construct scopes
  * scope.enter: enter a new scope
@@ -268,17 +240,22 @@ void CminusfBuilder::visit(ASTExpressionStmt &node)
     node.expression->accept(*this);
 }
 
-void CminusfBuilder::visit(ASTSelectionStmt &node) {
+void CminusfBuilder::visit(ASTSelectionStmt &node)
+{
     node.expression->accept(*this);
     auto cond = expr;
     auto type = cond->get_type();
-    if (type->is_integer_type()) {
+    if (type->is_integer_type())
+    {
         auto boolType = (IntegerType *)type;
         auto bitNum = boolType->get_num_bits();
-        if (bitNum != 1) {
+        if (bitNum != 1)
+        {
             cond = builder->create_zext(cond, Type::get_int1_type(module.get()));
         }
-    } else {
+    }
+    else
+    {
         cond = builder->create_zext(cond, Type::get_int1_type(module.get()));
     }
 
@@ -292,7 +269,8 @@ void CminusfBuilder::visit(ASTSelectionStmt &node) {
     scope.exit();
     builder->create_br(BB);
     builder->set_insert_point(fBB);
-    if (node.else_statement) {
+    if (node.else_statement)
+    {
         scope.enter();
         node.else_statement->accept(*this);
         scope.exit();
@@ -301,7 +279,8 @@ void CminusfBuilder::visit(ASTSelectionStmt &node) {
     builder->set_insert_point(BB);
 }
 
-void CminusfBuilder::visit(ASTIterationStmt &node) {
+void CminusfBuilder::visit(ASTIterationStmt &node)
+{
     auto condBB = BasicBlock::create(module.get(), "", builder->get_insert_block()->get_parent());
     auto tBB = BasicBlock::create(module.get(), "", builder->get_insert_block()->get_parent());
     auto fBB = BasicBlock::create(module.get(), "", builder->get_insert_block()->get_parent());
@@ -310,13 +289,17 @@ void CminusfBuilder::visit(ASTIterationStmt &node) {
     node.expression->accept(*this);
     auto cond = expr;
     auto type = cond->get_type();
-    if (type->is_integer_type()) {
+    if (type->is_integer_type())
+    {
         auto boolType = (IntegerType *)type;
         auto bitNum = boolType->get_num_bits();
-        if (bitNum != 1) {
+        if (bitNum != 1)
+        {
             cond = builder->create_zext(cond, Type::get_int1_type(module.get()));
         }
-    } else {
+    }
+    else
+    {
         cond = builder->create_zext(cond, Type::get_int1_type(module.get()));
     }
     builder->create_cond_br(cond, tBB, fBB);
@@ -400,12 +383,17 @@ void CminusfBuilder::visit(ASTAssignExpression &node)
     node.expression->accept(*this);
     auto store = expr;
 
-    if (var->get_type()->is_float_type()) {
-        if (store->get_type()->is_integer_type()) {
+    if (var->get_type()->is_float_type())
+    {
+        if (store->get_type()->is_integer_type())
+        {
             store = builder->create_zext(store, Type::get_float_type(module.get()));
         }
-    } else {
-        if (store->get_type()->is_float_type()) {
+    }
+    else
+    {
+        if (store->get_type()->is_float_type())
+        {
             store = builder->create_zext(store, Type::get_int32_type(module.get()));
         }
     }
@@ -423,27 +411,168 @@ void CminusfBuilder::visit(ASTSimpleExpression &node)
         node.additive_expression_r->accept(*this);
         auto rRes = expr;
 
+        auto a = lRes;
+        auto b = rRes;
+
         // TODO: cast.
         // Currently, to sleep early, we only consider int case.
         switch (node.op)
         {
         case OP_LE:
-            expr = castWhenBinOpRequire(lRes, rRes, builder->create_icmp_le, builder->create_fcmp_le, builder, module.get());
+            if (a->get_type()->is_float_type())
+            {
+                if (b->get_type()->is_float_type())
+                {
+                    return builder->create_fcmp_le(a, b);
+                }
+                else
+                {
+                    auto bCast = builder->create_zext(b, Type::get_float_type(module));
+                    return builder->create_fcmp_le(a, bCast);
+                }
+            }
+            else
+            {
+                if (b->get_type()->is_float_type())
+                {
+                    auto aCast = builder->create_zext(a, Type::get_float_type(module));
+                    return builder->create_fcmp_le(aCast, b);
+                }
+                else
+                {
+                    return builder->create_icmp_le(a, b);
+                }
+            }
             break;
         case OP_LT:
-            expr = castWhenBinOpRequire(lRes, rRes, builder->create_icmp_lt, builder->create_fcmp_lt, builder, module.get());
+            if (a->get_type()->is_float_type())
+            {
+                if (b->get_type()->is_float_type())
+                {
+                    return builder->create_fcmp_lt(a, b);
+                }
+                else
+                {
+                    auto bCast = builder->create_zext(b, Type::get_float_type(module));
+                    return builder->create_fcmp_lt(a, bCast);
+                }
+            }
+            else
+            {
+                if (b->get_type()->is_float_type())
+                {
+                    auto aCast = builder->create_zext(a, Type::get_float_type(module));
+                    return builder->create_fcmp_lt(aCast, b);
+                }
+                else
+                {
+                    return builder->create_icmp_lt(a, b);
+                }
+            }
             break;
         case OP_GT:
-            expr = castWhenBinOpRequire(lRes, rRes, builder->create_icmp_gt, builder->create_fcmp_gt, builder, module.get());
+            if (a->get_type()->is_float_type())
+            {
+                if (b->get_type()->is_float_type())
+                {
+                    return builder->create_fcmp_gt(a, b);
+                }
+                else
+                {
+                    auto bCast = builder->create_zext(b, Type::get_float_type(module));
+                    return builder->create_fcmp_gt(a, bCast);
+                }
+            }
+            else
+            {
+                if (b->get_type()->is_float_type())
+                {
+                    auto aCast = builder->create_zext(a, Type::get_float_type(module));
+                    return builder->create_fcmp_gt(aCast, b);
+                }
+                else
+                {
+                    return builder->create_icmp_gt(a, b);
+                }
+            }
             break;
         case OP_GE:
-            expr = castWhenBinOpRequire(lRes, rRes, builder->create_icmp_ge, builder->create_fcmp_ge, builder, module.get());
+            if (a->get_type()->is_float_type())
+            {
+                if (b->get_type()->is_float_type())
+                {
+                    return builder->create_fcmp_ge(a, b);
+                }
+                else
+                {
+                    auto bCast = builder->create_zext(b, Type::get_float_type(module));
+                    return builder->create_fcmp_ge(a, bCast);
+                }
+            }
+            else
+            {
+                if (b->get_type()->is_float_type())
+                {
+                    auto aCast = builder->create_zext(a, Type::get_float_type(module));
+                    return builder->create_fcmp_ge(aCast, b);
+                }
+                else
+                {
+                    return builder->create_icmp_ge(a, b);
+                }
+            }
             break;
         case OP_EQ:
-            expr = castWhenBinOpRequire(lRes, rRes, builder->create_icmp_eq, builder->create_fcmp_eq, builder, module.get());
+            if (a->get_type()->is_float_type())
+            {
+                if (b->get_type()->is_float_type())
+                {
+                    return builder->create_fcmp_eq(a, b);
+                }
+                else
+                {
+                    auto bCast = builder->create_zext(b, Type::get_float_type(module));
+                    return builder->create_fcmp_eq(a, bCast);
+                }
+            }
+            else
+            {
+                if (b->get_type()->is_float_type())
+                {
+                    auto aCast = builder->create_zext(a, Type::get_float_type(module));
+                    return builder->create_fcmp_eq(aCast, b);
+                }
+                else
+                {
+                    return builder->create_icmp_eq(a, b);
+                }
+            }
             break;
         default:
-            expr = castWhenBinOpRequire(lRes, rRes, builder->create_icmp_ne, builder->create_fcmp_ne, builder, module.get());
+            if (a->get_type()->is_float_type())
+            {
+                if (b->get_type()->is_float_type())
+                {
+                    return builder->create_fcmp_ne(a, b);
+                }
+                else
+                {
+                    auto bCast = builder->create_zext(b, Type::get_float_type(module));
+                    return builder->create_fcmp_ne(a, bCast);
+                }
+            }
+            else
+            {
+                if (b->get_type()->is_float_type())
+                {
+                    auto aCast = builder->create_zext(a, Type::get_float_type(module));
+                    return builder->create_fcmp_ne(aCast, b);
+                }
+                else
+                {
+                    return builder->create_icmp_ne(a, b);
+                }
+            }
             break;
         }
     }
