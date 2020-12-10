@@ -16,7 +16,6 @@ Type *numType;
 
 // After computation, Value * and its type are returned here.
 Value *expr;
-
 Value *return_alloca;
 
 enum var_op
@@ -211,16 +210,33 @@ void CminusfBuilder::visit(ASTCompoundStmt &node)
         // array declaration
         if (var_declaration->num != nullptr)
         {
-            // TODO add f or i
-            auto arrType = ArrayType::get_int32_type(module.get());
-            auto arrptr = builder->create_alloca(arrType);
-            scope.push(var_declaration->id, arrptr);
+            if (var_declaration->type == TYPE_INT)
+            {
+                auto arrType = ArrayType::get_int32_type(module.get());
+                auto arrptr = builder->create_alloca(arrType);
+                scope.push(var_declaration->id, arrptr);
+            }
+            if (var_declaration->type == TYPE_FLOAT)
+            {
+                auto arrType = ArrayType::get_float_type(module.get());
+                auto arrptr = builder->create_alloca(arrType);
+                scope.push(var_declaration->id, arrptr);
+            }
         }
-        // normal variable declaration
+        // variable declaration
         else
         {
-            // auto var = builder->create_alloca(Type::get_int32_type(context));
-            // scope.push(var_declaration->id, var);
+            if (var_declaration->type == TYPE_INT)
+            {
+                auto var = builder->create_alloca(cminusType2Type(TYPE_INT, module.get()));
+                scope.push(var_declaration->id, var);
+            }
+            if (var_declaration->type == TYPE_FLOAT)
+            {
+                auto var = builder->create_alloca(cminusType2Type(TYPE_FLOAT, module.get()));
+                // auto var = builder->create_alloca(Type::get_int32_type());
+                scope.push(var_declaration->id, var);
+            }
         }
     }
     is_returned = false;
@@ -321,13 +337,13 @@ void CminusfBuilder::visit(ASTReturnStmt &node)
         node.expression->accept(*this);
         Value *retVal;
         // TODO add f or i
-        if (expr->get_type() == Type::get_int32_type(module.get()))
+        if (expr->get_type() == Type::get_int32_type(module.get())) // what happened ?
         {
             // cast i1 boolean true or false result to i32 0 or 1
             auto retCast = builder->create_zext(expr, Type::get_int32_type(module.get()));
             retVal = retCast;
         }
-        else if (expr->get_type() == Type::get_int32_type(module.get()))
+        else if (expr->get_type() == Type::get_int32_type(module.get())) // what happened ?
         {
             retVal = expr;
         }
@@ -423,24 +439,24 @@ void CminusfBuilder::visit(ASTSimpleExpression &node)
             {
                 if (b->get_type()->is_float_type())
                 {
-                    return builder->create_fcmp_le(a, b);
+                    expr = builder->create_fcmp_le(a, b);
                 }
                 else
                 {
-                    auto bCast = builder->create_zext(b, Type::get_float_type(module));
-                    return builder->create_fcmp_le(a, bCast);
+                    // auto bCast = builder->create_zext(b, Type::get_float_type(module));
+                    // return builder->create_fcmp_le(a, bCast); // no return?
                 }
             }
             else
             {
                 if (b->get_type()->is_float_type())
                 {
-                    auto aCast = builder->create_zext(a, Type::get_float_type(module));
-                    return builder->create_fcmp_le(aCast, b);
+                    // auto aCast = builder->create_zext(a, Type::get_float_type(module));
+                    // return builder->create_fcmp_le(aCast, b); // no return?
                 }
                 else
                 {
-                    return builder->create_icmp_le(a, b);
+                    // return builder->create_icmp_le(a, b); // no return?
                 }
             }
             break;
@@ -449,24 +465,24 @@ void CminusfBuilder::visit(ASTSimpleExpression &node)
             {
                 if (b->get_type()->is_float_type())
                 {
-                    return builder->create_fcmp_lt(a, b);
+                    // return builder->create_fcmp_lt(a, b); // TODO no return?
                 }
                 else
                 {
-                    auto bCast = builder->create_zext(b, Type::get_float_type(module));
-                    return builder->create_fcmp_lt(a, bCast);
+                    // auto bCast = builder->create_zext(b, Type::get_float_type(module));
+                    // return builder->create_fcmp_lt(a, bCast); // no return?
                 }
             }
             else
             {
                 if (b->get_type()->is_float_type())
                 {
-                    auto aCast = builder->create_zext(a, Type::get_float_type(module));
-                    return builder->create_fcmp_lt(aCast, b);
+                    // auto aCast = builder->create_zext(a, Type::get_float_type(module));
+                    // return builder->create_fcmp_lt(aCast, b); // no return?
                 }
                 else
                 {
-                    return builder->create_icmp_lt(a, b);
+                    // return builder->create_icmp_lt(a, b); // no return?
                 }
             }
             break;
@@ -475,24 +491,24 @@ void CminusfBuilder::visit(ASTSimpleExpression &node)
             {
                 if (b->get_type()->is_float_type())
                 {
-                    return builder->create_fcmp_gt(a, b);
+                    // return builder->create_fcmp_gt(a, b);
                 }
                 else
                 {
-                    auto bCast = builder->create_zext(b, Type::get_float_type(module));
-                    return builder->create_fcmp_gt(a, bCast);
+                    // auto bCast = builder->create_zext(b, Type::get_float_type(module));
+                    // return builder->create_fcmp_gt(a, bCast);
                 }
             }
             else
             {
                 if (b->get_type()->is_float_type())
                 {
-                    auto aCast = builder->create_zext(a, Type::get_float_type(module));
-                    return builder->create_fcmp_gt(aCast, b);
+                    // auto aCast = builder->create_zext(a, Type::get_float_type(module));
+                    // return builder->create_fcmp_gt(aCast, b);
                 }
                 else
                 {
-                    return builder->create_icmp_gt(a, b);
+                    // return builder->create_icmp_gt(a, b);
                 }
             }
             break;
@@ -501,24 +517,24 @@ void CminusfBuilder::visit(ASTSimpleExpression &node)
             {
                 if (b->get_type()->is_float_type())
                 {
-                    return builder->create_fcmp_ge(a, b);
+                    // return builder->create_fcmp_ge(a, b);
                 }
                 else
                 {
-                    auto bCast = builder->create_zext(b, Type::get_float_type(module));
-                    return builder->create_fcmp_ge(a, bCast);
+                    // auto bCast = builder->create_zext(b, Type::get_float_type(module));
+                    // return builder->create_fcmp_ge(a, bCast);
                 }
             }
             else
             {
                 if (b->get_type()->is_float_type())
                 {
-                    auto aCast = builder->create_zext(a, Type::get_float_type(module));
-                    return builder->create_fcmp_ge(aCast, b);
+                    // auto aCast = builder->create_zext(a, Type::get_float_type(module));
+                    // return builder->create_fcmp_ge(aCast, b);
                 }
                 else
                 {
-                    return builder->create_icmp_ge(a, b);
+                    // return builder->create_icmp_ge(a, b);
                 }
             }
             break;
@@ -527,24 +543,24 @@ void CminusfBuilder::visit(ASTSimpleExpression &node)
             {
                 if (b->get_type()->is_float_type())
                 {
-                    return builder->create_fcmp_eq(a, b);
+                    // return builder->create_fcmp_eq(a, b);
                 }
                 else
                 {
-                    auto bCast = builder->create_zext(b, Type::get_float_type(module));
-                    return builder->create_fcmp_eq(a, bCast);
+                    // auto bCast = builder->create_zext(b, Type::get_float_type(module));
+                    // return builder->create_fcmp_eq(a, bCast);
                 }
             }
             else
             {
                 if (b->get_type()->is_float_type())
                 {
-                    auto aCast = builder->create_zext(a, Type::get_float_type(module));
-                    return builder->create_fcmp_eq(aCast, b);
+                    // auto aCast = builder->create_zext(a, Type::get_float_type(module));
+                    // return builder->create_fcmp_eq(aCast, b);
                 }
                 else
                 {
-                    return builder->create_icmp_eq(a, b);
+                    // return builder->create_icmp_eq(a, b);
                 }
             }
             break;
@@ -553,24 +569,24 @@ void CminusfBuilder::visit(ASTSimpleExpression &node)
             {
                 if (b->get_type()->is_float_type())
                 {
-                    return builder->create_fcmp_ne(a, b);
+                    // return builder->create_fcmp_ne(a, b);
                 }
                 else
                 {
-                    auto bCast = builder->create_zext(b, Type::get_float_type(module));
-                    return builder->create_fcmp_ne(a, bCast);
+                    // auto bCast = builder->create_zext(b, Type::get_float_type(module));
+                    // return builder->create_fcmp_ne(a, bCast);
                 }
             }
             else
             {
                 if (b->get_type()->is_float_type())
                 {
-                    auto aCast = builder->create_zext(a, Type::get_float_type(module));
-                    return builder->create_fcmp_ne(aCast, b);
+                    // auto aCast = builder->create_zext(a, Type::get_float_type(module));
+                    // return builder->create_fcmp_ne(aCast, b);
                 }
                 else
                 {
-                    return builder->create_icmp_ne(a, b);
+                    // return builder->create_icmp_ne(a, b);
                 }
             }
             break;
