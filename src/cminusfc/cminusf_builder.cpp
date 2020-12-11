@@ -207,7 +207,6 @@ void CminusfBuilder::visit(ASTCompoundStmt &node)
         {
             std::cout << "Error no void type variable or array is allowed" << std::endl;
         }
-        // array declaration
         if (var_declaration->num != nullptr)
         {
             if (var_declaration->type == TYPE_INT)
@@ -223,7 +222,6 @@ void CminusfBuilder::visit(ASTCompoundStmt &node)
                 scope.push(var_declaration->id, arrptr);
             }
         }
-        // variable declaration
         else
         {
             if (var_declaration->type == TYPE_INT)
@@ -234,7 +232,6 @@ void CminusfBuilder::visit(ASTCompoundStmt &node)
             if (var_declaration->type == TYPE_FLOAT)
             {
                 auto var = builder->create_alloca(cminusType2Type(TYPE_FLOAT, module.get()));
-                // auto var = builder->create_alloca(Type::get_int32_type());
                 scope.push(var_declaration->id, var);
             }
         }
@@ -337,13 +334,13 @@ void CminusfBuilder::visit(ASTReturnStmt &node)
         node.expression->accept(*this);
         Value *retVal;
         // TODO add f or i
-        if (expr->get_type() == Type::get_int32_type(module.get())) // what happened ?
+        if (expr->get_type() == Type::get_int1_type(module.get())) // what happened ?
         {
             // cast i1 boolean true or false result to i32 0 or 1
             auto retCast = builder->create_zext(expr, Type::get_int32_type(module.get()));
             retVal = retCast;
         }
-        else if (expr->get_type() == Type::get_int32_type(module.get())) // what happened ?
+        else if (expr->get_type() == Type::get_int32_type(module.get()) || expr->get_type() == Type::get_float_type(module.get()))
         {
             retVal = expr;
         }
