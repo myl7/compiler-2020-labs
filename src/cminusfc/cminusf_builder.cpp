@@ -12,7 +12,7 @@
 // to store state
 bool is_returned = false;
 bool is_returned_record = false;
-BasicBlock *return_block;
+BasicBlock *return_block = nullptr;
 
 // After computation, Value * and its type are returned here.
 Value *expr;
@@ -250,6 +250,7 @@ void CminusfBuilder::visit(ASTCompoundStmt &node)
 #endif
 
     scope.enter();
+    // FIXME: Var declarations should be done in ASTVarDeclaration visit.
     for (auto var_declaration : node.local_declarations)
     {
         if (var_declaration->type == TYPE_VOID)
@@ -285,6 +286,7 @@ void CminusfBuilder::visit(ASTCompoundStmt &node)
             }
         }
     }
+
     is_returned = false;
     for (auto stmt : node.statement_list)
     {
@@ -292,6 +294,11 @@ void CminusfBuilder::visit(ASTCompoundStmt &node)
         if (is_returned)
             break;
     }
+
+    if (return_block) {
+        return_block->erase_from_parent();
+    }
+
     is_returned_record = is_returned;
     is_returned = false;
     scope.exit();
@@ -330,23 +337,52 @@ void CminusfBuilder::visit(ASTSelectionStmt &node)
     }
 
     auto tBB = BasicBlock::create(module.get(), "", builder->get_insert_block()->get_parent());
+    auto tRet = false;
     auto fBB = BasicBlock::create(module.get(), "", builder->get_insert_block()->get_parent());
+    auto fRet = false;
     auto BB = BasicBlock::create(module.get(), "", builder->get_insert_block()->get_parent());
     builder->create_cond_br(cond, tBB, fBB);
     builder->set_insert_point(tBB);
     scope.enter();
     node.if_statement->accept(*this);
     scope.exit();
-    builder->create_br(BB);
+    if (!is_returned_record)
+    {
+        builder->create_br(BB);
+    }
+    else
+    {
+        tRet = true;
+    }
+    is_returned_record = false;
     builder->set_insert_point(fBB);
     if (node.else_statement)
     {
         scope.enter();
         node.else_statement->accept(*this);
         scope.exit();
+
+        if (!is_returned_record)
+        {
+            builder->create_br(BB);
+        }
+        else
+        {
+            fRet = true;
+        }
+        is_returned_record = false;
     }
-    builder->create_br(BB);
+    else
+    {
+        fRet = true;
+    }
     builder->set_insert_point(BB);
+    return_block = BB;
+
+    if (tRet && fRet)
+    {
+        is_returned_record = true;
+    }
 }
 
 void CminusfBuilder::visit(ASTIterationStmt &node)
@@ -403,6 +439,8 @@ void CminusfBuilder::visit(ASTReturnStmt &node)
         {
             builder->create_ret(CONST_ZERO(Type::get_int32_type(module.get())));
         }
+        is_returned = true;
+        is_returned_record = true;
         return;
     }
 
@@ -416,6 +454,8 @@ void CminusfBuilder::visit(ASTReturnStmt &node)
     {
         builder->create_void_ret();
     }
+    is_returned = true;
+    is_returned_record = true;
 
     // if (node.expression != nullptr)
     // {
