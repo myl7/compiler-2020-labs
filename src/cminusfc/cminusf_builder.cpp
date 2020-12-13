@@ -158,17 +158,19 @@ void CminusfBuilder::visit(ASTFunDeclaration &node)
     fprintf(stderr, "ASTFunDeclaration is visited\n");
 #endif
 
-    if (node.id == "main" && node.params.size() != 0 && node.type != TYPE_VOID)
-    {
-        LOG(ERROR) << "main function should have 0 params";
-        exit(1);
-    }
-
     // Handle main function ret type.
     // Linux requires a 0 return code.
 
     auto paramTypes = std::vector<Type *>{};
-    if (node.id != "main")
+    if (node.id == "main")
+    {
+        if (node.params.size() > 0)
+        {
+            LOG(ERROR) << "Invalied main function";
+            exit(1);
+        }
+    }
+    else
     {
         for (const auto &param : node.params)
         {
@@ -181,7 +183,21 @@ void CminusfBuilder::visit(ASTFunDeclaration &node)
         }
     }
 
-    auto retType = node.id == "main" ? Type::get_int32_type(module.get()) : cminusType2Type(node.type, module.get());
+    Type *retType;
+    if (node.id == "main")
+    {
+        if (node.type != TYPE_VOID)
+        {
+            LOG(ERROR) << "Invalied main function";
+            exit(1);
+        }
+        retType = Type::get_int32_type(module.get());
+    }
+    else
+    {
+        retType = cminusType2Type(node.type, module.get());
+    }
+
     auto type = FunctionType::get(retType, paramTypes);
 
     auto func = Function::create(type, node.id, module.get());
@@ -549,24 +565,24 @@ void CminusfBuilder::visit(ASTSimpleExpression &node)
             {
                 if (b->get_type()->is_float_type())
                 {
-                    // return builder->create_fcmp_lt(a, b); // TODO no return?
+                    expr = builder->create_fcmp_lt(a, b);
                 }
                 else
                 {
-                    // auto bCast = builder->create_zext(b, Type::get_float_type(module));
-                    // return builder->create_fcmp_lt(a, bCast); // no return?
+                    auto bCast = builder->create_sitofp(b, Type::get_float_type(module.get()));
+                    expr = builder->create_fcmp_lt(a, bCast);
                 }
             }
             else
             {
                 if (b->get_type()->is_float_type())
                 {
-                    // auto aCast = builder->create_zext(a, Type::get_float_type(module));
-                    // return builder->create_fcmp_lt(aCast, b); // no return?
+                    auto aCast = builder->create_sitofp(a, Type::get_float_type(module.get()));
+                    expr = builder->create_fcmp_lt(aCast, b);
                 }
                 else
                 {
-                    // return builder->create_icmp_lt(a, b); // no return?
+                    expr = builder->create_icmp_lt(a, b);
                 }
             }
             break;
@@ -627,24 +643,24 @@ void CminusfBuilder::visit(ASTSimpleExpression &node)
             {
                 if (b->get_type()->is_float_type())
                 {
-                    // return builder->create_fcmp_eq(a, b);
+                    expr = builder->create_fcmp_eq(a, b);
                 }
                 else
                 {
-                    // auto bCast = builder->create_zext(b, Type::get_float_type(module));
-                    // return builder->create_fcmp_eq(a, bCast);
+                    auto bCast = builder->create_sitofp(b, Type::get_float_type(module.get()));
+                    expr = builder->create_fcmp_eq(a, bCast);
                 }
             }
             else
             {
                 if (b->get_type()->is_float_type())
                 {
-                    // auto aCast = builder->create_zext(a, Type::get_float_type(module));
-                    // return builder->create_fcmp_eq(aCast, b);
+                    auto aCast = builder->create_sitofp(a, Type::get_float_type(module.get()));
+                    expr = builder->create_fcmp_eq(aCast, b);
                 }
                 else
                 {
-                    // return builder->create_icmp_eq(a, b);
+                    expr = builder->create_icmp_eq(a, b);
                 }
             }
             break;
