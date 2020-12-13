@@ -483,14 +483,14 @@ void CminusfBuilder::visit(ASTAssignExpression &node)
     {
         if (store->get_type()->is_integer_type())
         {
-            store = builder->create_zext(store, Type::get_float_type(module.get()));
+            store = builder->create_sitofp(store, Type::get_int32_type(module.get()));
         }
     }
     else
     {
         if (store->get_type()->is_float_type())
         {
-            store = builder->create_zext(store, Type::get_int32_type(module.get()));
+            store = builder->create_fptosi(store, Type::get_int32_type(module.get()));
         }
     }
 
