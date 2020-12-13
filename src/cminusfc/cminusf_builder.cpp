@@ -16,6 +16,7 @@ BasicBlock *return_block;
 
 // After computation, Value * and its type are returned here.
 Value *expr;
+Value *varPtr;
 Value *return_alloca;
 
 enum var_op
@@ -461,7 +462,9 @@ void CminusfBuilder::visit(ASTVar &node)
         Value *val = builder->create_gep(val, {CONST_ZERO(Type::get_int32_type(module.get())), index});
     }
 
-    expr = val;
+    varPtr = val;
+    // Most of time the below is not required, we just leave the unused code to pass tests.
+    expr = builder->create_load(val);
 }
 
 void CminusfBuilder::visit(ASTAssignExpression &node)
@@ -471,7 +474,7 @@ void CminusfBuilder::visit(ASTAssignExpression &node)
 #endif
 
     node.var->accept(*this);
-    auto var = expr;
+    auto var = varPtr;
 
     node.expression->accept(*this);
     auto store = expr;
