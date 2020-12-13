@@ -101,16 +101,15 @@ void CminusfBuilder::visit(ASTNum &node)
 
     switch (node.type)
     {
-    TYPE_INT:
+    case TYPE_INT:
         expr = CONST_INT(node.i_val);
         break;
-    TYPE_FLOAT:
+    case TYPE_FLOAT:
         expr = CONST_FP(node.f_val);
         break;
     default:
-        LOG(INFO) << "Number type void, default to int";
-        expr = CONST_INT(node.i_val);
-        break;
+        LOG(ERROR) << "Unexpected ASTNum type void";
+        exit(1);
     }
 }
 
