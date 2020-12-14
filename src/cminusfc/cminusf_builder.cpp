@@ -179,9 +179,15 @@ void CminusfBuilder::visit(ASTVarDeclaration &node)
         type = Type::get_array_type(type, node.num->i_val);
     }
 
-    auto var = builder->create_alloca(type);
-    builder->create_store(CONST_ZERO(type), var);
-
+    Value *var;
+    if (!builder->get_insert_block())
+    {
+        var = GlobalVariable::create(node.id, module.get(), type, false, CONST_ZERO(type));
+    }
+    else
+    {
+        var = builder->create_alloca(type);
+    }
     if (!scope.push(node.id, var))
     {
         LOG(ERROR) << "Redeclare variable: " << node.id;
