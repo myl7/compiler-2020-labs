@@ -330,6 +330,7 @@ void CminusfBuilder::visit(ASTExpressionStmt &node)
     LOG(INFO) << "ASTExpressionStmt is visited\n";
 
     node.expression->accept(*this);
+    is_returned = false;
 }
 
 void CminusfBuilder::visit(ASTSelectionStmt &node)
@@ -419,7 +420,11 @@ void CminusfBuilder::visit(ASTIterationStmt &node)
     auto type = cond->get_type();
     if (type->is_integer_type())
     {
-        cond = builder->create_icmp_ne(cond, CONST_ZERO(Type::get_int32_type(module.get())));
+        auto itype = static_cast<IntegerType *>(type);
+        if (itype->get_num_bits() == 32)
+        {
+            cond = builder->create_icmp_ne(cond, CONST_ZERO(Type::get_int32_type(module.get())));
+        }
     }
     else if (type->is_float_type())
     {
@@ -434,12 +439,14 @@ void CminusfBuilder::visit(ASTIterationStmt &node)
     builder->create_br(condBB);
 
     builder->set_insert_point(fBB);
-    return_block = fBB;
+    is_returned = false;
 }
 
 void CminusfBuilder::visit(ASTReturnStmt &node)
 {
     LOG(INFO) << "ASTReturnStmt is visited\n";
+
+    is_returned = true;
 
     if (builder->get_insert_block()->get_parent()->get_name() == "main")
     {
@@ -451,7 +458,6 @@ void CminusfBuilder::visit(ASTReturnStmt &node)
         {
             builder->create_ret(CONST_ZERO(Type::get_int32_type(module.get())));
         }
-        is_returned = true;
         return;
     }
 
@@ -465,7 +471,6 @@ void CminusfBuilder::visit(ASTReturnStmt &node)
     {
         builder->create_void_ret();
     }
-    is_returned = true;
 
     // if (node.expression != nullptr)
     // {
