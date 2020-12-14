@@ -336,12 +336,12 @@ void CminusfBuilder::visit(ASTSelectionStmt &node)
         auto bitNum = boolType->get_num_bits();
         if (bitNum != 1)
         {
-            cond = builder->create_zext(cond, Type::get_int1_type(module.get()));
+            cond = builder->create_icmp_ne(cond, CONST_ZERO(Type::get_int32_type(module.get())));
         }
     }
     else
     {
-        cond = builder->create_zext(cond, Type::get_int1_type(module.get()));
+        cond = builder->create_fcmp_ne(cond, CONST_ZERO(Type::get_float_type(module.get())));
     }
 
     auto tBB = BasicBlock::create(module.get(), "", builder->get_insert_block()->get_parent());
