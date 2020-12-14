@@ -6,14 +6,12 @@
 #define CONST_FP(num) ConstantFP::get((float)num, module.get())
 #define CONST_ZERO(type) ConstantZero::get(type, module.get())
 
-#define DEBUG
-
 // You can define global variables here
 // to store state
 
 // This marks a subprocess that will absolutely return.
 // So we can ignore the following content;
-bool is_returned_record = false;
+bool is_returned = false;
 BasicBlock *return_block = nullptr;
 
 // After computation, Value * and its type are returned here.
@@ -72,9 +70,7 @@ Type *cminusType2TypeExceptVoid(CminusType type, Module *module, const std::stri
 // but its param type check is delayed to ASTFunDeclaration visit.
 void CminusfBuilder::visit(ASTProgram &node)
 {
-#ifdef DEBUG
-    fprintf(stderr, "ASTProgram is visited\n");
-#endif
+    LOG(INFO) << "ASTProgram is visited\n";
 
     if (node.declarations.size() == 0)
     {
@@ -100,9 +96,7 @@ void CminusfBuilder::visit(ASTProgram &node)
 // Manipulating builder is made by upper visit.
 void CminusfBuilder::visit(ASTNum &node)
 {
-#ifdef DEBUG
-    fprintf(stderr, "ASTNum is visited\n");
-#endif
+    LOG(INFO) << "ASTNum is visited\n";
 
     switch (node.type)
     {
@@ -120,9 +114,7 @@ void CminusfBuilder::visit(ASTNum &node)
 
 void CminusfBuilder::visit(ASTVarDeclaration &node)
 {
-#ifdef DEBUG
-    fprintf(stderr, "ASTVarDeclaration is visited\n");
-#endif
+    LOG(INFO) << "ASTVarDeclaration is visited\n";
 
     auto type = cminusType2TypeExceptVoid(node.type, module.get(), "Unexpected variable type: void");
 
@@ -158,9 +150,7 @@ void CminusfBuilder::visit(ASTVarDeclaration &node)
 
 void CminusfBuilder::visit(ASTFunDeclaration &node)
 {
-#ifdef DEBUG
-    fprintf(stderr, "ASTFunDeclaration is visited\n");
-#endif
+    LOG(INFO) << "ASTFunDeclaration is visited\n";
 
     // Handle main function ret type.
     // Linux requires a 0 return code.
@@ -232,9 +222,7 @@ void CminusfBuilder::visit(ASTFunDeclaration &node)
 
 void CminusfBuilder::visit(ASTParam &node)
 {
-#ifdef DEBUG
-    fprintf(stderr, "ASTParam is visited\n");
-#endif
+    LOG(INFO) << "ASTParam is visited\n";
 
     auto type = cminusType2TypeExceptVoid(node.type, module.get(), "Unexpected param type: void");
     if (node.isarray)
@@ -253,9 +241,7 @@ void CminusfBuilder::visit(ASTParam &node)
 
 void CminusfBuilder::visit(ASTCompoundStmt &node)
 {
-#ifdef DEBUG
-    fprintf(stderr, "ASTCompoundStmt is visited\n");
-#endif
+    LOG(INFO) << "ASTCompoundStmt is visited\n";
 
     scope.enter();
     // FIXME: Var declarations should be done in ASTVarDeclaration visit.
@@ -297,16 +283,16 @@ void CminusfBuilder::visit(ASTCompoundStmt &node)
 
     for (auto stmt : node.statement_list)
     {
-        is_returned_record = false;
+        is_returned = false;
         stmt->accept(*this);
-        if (is_returned_record)
+        if (is_returned)
             break;
     }
 
-    if (is_returned_record && return_block)
+    if (is_returned && return_block)
     {
         return_block->erase_from_parent();
-        is_returned_record = false;
+        is_returned = false;
         return_block = nullptr;
     }
 
@@ -315,18 +301,14 @@ void CminusfBuilder::visit(ASTCompoundStmt &node)
 
 void CminusfBuilder::visit(ASTExpressionStmt &node)
 {
-#ifdef DEBUG
-    fprintf(stderr, "ASTExpressionStmt is visited\n");
-#endif
+    LOG(INFO) << "ASTExpressionStmt is visited\n";
 
     node.expression->accept(*this);
 }
 
 void CminusfBuilder::visit(ASTSelectionStmt &node)
 {
-#ifdef DEBUG
-    fprintf(stderr, "ASTSelectionStmt is visited\n");
-#endif
+    LOG(INFO) << "ASTSelectionStmt is visited\n";
 
     node.expression->accept(*this);
     auto cond = expr;
@@ -355,16 +337,16 @@ void CminusfBuilder::visit(ASTSelectionStmt &node)
     scope.enter();
     node.if_statement->accept(*this);
     scope.exit();
-    if (is_returned_record)
+    if (is_returned)
     {
         tRet = true;
-        is_returned_record = false;
+        is_returned = false;
     }
     else
     {
         builder->create_br(BB);
     }
-    is_returned_record = false;
+    is_returned = false;
     builder->set_insert_point(fBB);
     if (node.else_statement)
     {
@@ -372,16 +354,16 @@ void CminusfBuilder::visit(ASTSelectionStmt &node)
         node.else_statement->accept(*this);
         scope.exit();
 
-        if (is_returned_record)
+        if (is_returned)
         {
             fRet = true;
-            is_returned_record = false;
+            is_returned = false;
         }
         else
         {
             builder->create_br(BB);
         }
-        is_returned_record = false;
+        is_returned = false;
     }
     else
     {
@@ -391,16 +373,14 @@ void CminusfBuilder::visit(ASTSelectionStmt &node)
 
     if (tRet && fRet)
     {
-        is_returned_record = true;
+        is_returned = true;
         return_block = BB;
     }
 }
 
 void CminusfBuilder::visit(ASTIterationStmt &node)
 {
-#ifdef DEBUG
-    fprintf(stderr, "ASTIterationStmt is visited\n");
-#endif
+    LOG(INFO) << "ASTIterationStmt is visited\n";
 
     auto condBB = BasicBlock::create(module.get(), "", builder->get_insert_block()->get_parent());
     auto tBB = BasicBlock::create(module.get(), "", builder->get_insert_block()->get_parent());
@@ -433,9 +413,7 @@ void CminusfBuilder::visit(ASTIterationStmt &node)
 
 void CminusfBuilder::visit(ASTReturnStmt &node)
 {
-#ifdef DEBUG
-    fprintf(stderr, "ASTReturnStmt is visited\n");
-#endif
+    LOG(INFO) << "ASTReturnStmt is visited\n";
 
     if (builder->get_insert_block()->get_parent()->get_name() == "main")
     {
@@ -447,7 +425,7 @@ void CminusfBuilder::visit(ASTReturnStmt &node)
         {
             builder->create_ret(CONST_ZERO(Type::get_int32_type(module.get())));
         }
-        is_returned_record = true;
+        is_returned = true;
         return;
     }
 
@@ -461,7 +439,7 @@ void CminusfBuilder::visit(ASTReturnStmt &node)
     {
         builder->create_void_ret();
     }
-    is_returned_record = true;
+    is_returned = true;
 
     // if (node.expression != nullptr)
     // {
@@ -492,9 +470,7 @@ void CminusfBuilder::visit(ASTReturnStmt &node)
 
 void CminusfBuilder::visit(ASTVar &node)
 {
-#ifdef DEBUG
-    fprintf(stderr, "ASTVar is visited\n");
-#endif
+    LOG(INFO) << "ASTVar is visited\n";
 
     auto val = scope.find(node.id);
     if (val == nullptr)
@@ -531,9 +507,7 @@ void CminusfBuilder::visit(ASTVar &node)
 
 void CminusfBuilder::visit(ASTAssignExpression &node)
 {
-#ifdef DEBUG
-    fprintf(stderr, "ASTAssignExpression is visited\n");
-#endif
+    LOG(INFO) << "ASTAssignExpression is visited\n";
 
     node.var->accept(*this);
     auto var = varPtr;
@@ -561,9 +535,7 @@ void CminusfBuilder::visit(ASTAssignExpression &node)
 
 void CminusfBuilder::visit(ASTSimpleExpression &node)
 {
-#ifdef DEBUG
-    fprintf(stderr, "ASTSimpleExpression is visited\n");
-#endif
+    LOG(INFO) << "ASTSimpleExpression is visited\n";
 
     if (node.additive_expression_r)
     {
@@ -746,9 +718,7 @@ void CminusfBuilder::visit(ASTSimpleExpression &node)
 
 void CminusfBuilder::visit(ASTAdditiveExpression &node)
 {
-#ifdef DEBUG
-    fprintf(stderr, "ASTAdditiveExpression is visited\n");
-#endif
+    LOG(INFO) << "ASTAdditiveExpression is visited\n";
 
     if (node.additive_expression == nullptr)
     {
@@ -798,9 +768,7 @@ void CminusfBuilder::visit(ASTAdditiveExpression &node)
 // Feel free to refactor the variable names if you do not like them @yyw.
 void CminusfBuilder::visit(ASTTerm &node)
 {
-#ifdef DEBUG
-    fprintf(stderr, "ASTTerm is visited\n");
-#endif
+    LOG(INFO) << "ASTTerm is visited\n";
 
     if (!node.term)
     {
@@ -872,9 +840,7 @@ void CminusfBuilder::visit(ASTTerm &node)
 
 void CminusfBuilder::visit(ASTCall &node)
 {
-#ifdef DEBUG
-    fprintf(stderr, "ASTCall is visited\n");
-#endif
+    LOG(INFO) << "ASTCall is visited\n";
 
     auto func = scope.find(node.id);
     if (func == nullptr)
