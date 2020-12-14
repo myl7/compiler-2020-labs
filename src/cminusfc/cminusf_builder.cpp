@@ -271,7 +271,8 @@ void CminusfBuilder::visit(ASTCompoundStmt &node)
 
     scope.enter();
     // FIXME: Var declarations should be done in ASTVarDeclaration visit.
-    for (auto decl : node.local_declarations) {
+    for (auto decl : node.local_declarations)
+    {
         decl->accept(*this);
     }
 
@@ -434,13 +435,25 @@ void CminusfBuilder::visit(ASTReturnStmt &node)
         node.expression->accept(*this);
 
         auto retType = builder->get_insert_block()->get_parent()->get_return_type();
-        if (expr->get_type()->is_integer_type() && retType->is_float_type())
+        if (expr->get_type()->is_integer_type())
         {
-            expr = builder->create_sitofp(expr, Type::get_float_type(module.get()));
+            auto type = static_cast<IntegerType *>(expr->get_type());
+
+            if (type->get_num_bits() == 1)
+            {
+                expr = builder->create_zext(expr, Type::get_int32_type(module.get()));
+            }
+            if (retType->is_float_type())
+            {
+                expr = builder->create_sitofp(expr, Type::get_float_type(module.get()));
+            }
         }
-        if (expr->get_type()->is_float_type() && retType->is_integer_type())
+        else
         {
-            expr = builder->create_fptosi(expr, Type::get_int32_type(module.get()));
+            if (retType->is_integer_type())
+            {
+                expr = builder->create_fptosi(expr, Type::get_int32_type(module.get()));
+            }
         }
 
         builder->create_ret(expr);
@@ -471,6 +484,14 @@ void CminusfBuilder::visit(ASTVar &node)
         {
             index = builder->create_fptosi(index, Type::get_int32_type(module.get()));
         }
+        else
+        {
+            auto type = static_cast<IntegerType *>(index->get_type());
+            if (type->get_num_bits() == 1)
+            {
+                index = builder->create_zext(index, Type::get_int32_type(module.get()));
+            }
+        }
 
         auto cmp = builder->create_icmp_lt(index, CONST_ZERO(Type::get_int32_type(module.get())));
         auto tBB = BasicBlock::create(module.get(), "", builder->get_insert_block()->get_parent());
@@ -498,16 +519,23 @@ void CminusfBuilder::visit(ASTAssignExpression &node)
     node.expression->accept(*this);
     auto store = expr;
 
-    if (var->get_type()->get_pointer_element_type()->is_float_type())
+    auto varType = var->get_type()->get_pointer_element_type();
+
+    if (store->get_type()->is_integer_type())
     {
-        if (store->get_type()->is_integer_type())
+        auto type = static_cast<IntegerType *>(store->get_type());
+        if (type->get_num_bits() == 1)
         {
-            store = builder->create_sitofp(store, Type::get_int32_type(module.get()));
+            store = builder->create_zext(store, Type::get_int32_type(module.get()));
+        }
+        if (varType->is_float_type())
+        {
+            store = builder->create_sitofp(store, Type::get_float_type(module.get()));
         }
     }
     else
     {
-        if (store->get_type()->is_float_type())
+        if (varType->is_integer_type())
         {
             store = builder->create_fptosi(store, Type::get_int32_type(module.get()));
         }
@@ -729,14 +757,27 @@ void CminusfBuilder::visit(ASTCall &node)
     for (auto argType = funcType->param_begin(); argType != funcType->param_end(); argType++, i++)
     {
         node.args[i]->accept(*this);
-        if ((*argType)->is_float_type() && expr->get_type()->is_integer_type())
+
+        if (expr->get_type()->is_integer_type())
         {
-            expr = builder->create_sitofp(expr, Type::get_float_type(module.get()));
+            auto type = static_cast<IntegerType *>(expr->get_type());
+            if (type->get_num_bits() == 1)
+            {
+                expr = builder->create_zext(expr, Type::get_int32_type(module.get()));
+            }
+            if ((*argType)->is_float_type())
+            {
+                expr = builder->create_sitofp(expr, Type::get_float_type(module.get()));
+            }
         }
-        if ((*argType)->is_integer_type() && expr->get_type()->is_float_type())
+        else
         {
-            expr = builder->create_fptosi(expr, Type::get_int32_type(module.get()));
+            if ((*argType)->is_integer_type())
+            {
+                expr = builder->create_fptosi(expr, Type::get_int32_type(module.get()));
+            }
         }
+
         args.push_back(expr);
     }
 

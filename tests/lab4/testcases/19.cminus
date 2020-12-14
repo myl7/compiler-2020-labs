@@ -1,0 +1,12 @@
+int b(float x) {
+    return x > 1;
+}
+
+void main(void) {
+    int a[10];
+    a[1 < 2] = 3;
+    output(a[1]);
+    a[2] = b(2 > 3);
+    output(a[2]);
+    return;
+}
