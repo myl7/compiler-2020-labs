@@ -562,7 +562,8 @@ void CminusfBuilder::visit(ASTAssignExpression &node)
         }
     }
 
-    expr = builder->create_store(store, var);
+    builder->create_store(store, var);
+    expr = store;
 }
 
 void CminusfBuilder::visit(ASTSimpleExpression &node)
