@@ -1,8 +1,12 @@
 void main(void) {
     float a;
     a = 1 + 2.3;
+    outputFloat(a);
     a = 1 * 2.3;
+    outputFloat(a);
     a = 1 + 2.3 * 4;
+    outputFloat(a);
     a = (1 + 2.3) * 4;
+    outputFloat(a);
     return;
 }
