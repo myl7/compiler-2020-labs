@@ -1,0 +1,13 @@
+float a(int x) {
+    return x;
+}
+
+int b(float x) {
+    return x + 1.1;
+}
+
+void main(void) {
+    outputFloat(a(1.2));
+    output(b(11));
+    return;
+}

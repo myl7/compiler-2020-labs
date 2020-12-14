@@ -748,11 +748,28 @@ void CminusfBuilder::visit(ASTCall &node)
         LOG(ERROR) << "ERROR: Unknown function: " << node.id;
         exit(1);
     }
-    std::vector<Value *> args;
-    for (auto arg : node.args)
+
+    auto i = 0;
+    if (!func->get_type()->is_function_type())
     {
-        arg->accept(*this);
+        LOG(ERROR) << "Call a non-func object";
+        exit(1);
+    }
+    auto funcType = static_cast<FunctionType *>(func->get_type());
+    std::vector<Value *> args;
+    for (auto argType = funcType->param_begin(); argType != funcType->param_end(); argType++, i++)
+    {
+        node.args[i]->accept(*this);
+        if ((*argType)->is_float_type() && expr->get_type()->is_integer_type())
+        {
+            expr = builder->create_sitofp(expr, Type::get_float_type(module.get()));
+        }
+        if ((*argType)->is_integer_type() && expr->get_type()->is_float_type())
+        {
+            expr = builder->create_fptosi(expr, Type::get_int32_type(module.get()));
+        }
         args.push_back(expr);
     }
+
     expr = builder->create_call(func, args);
 }
