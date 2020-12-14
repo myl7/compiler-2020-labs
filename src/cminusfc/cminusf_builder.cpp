@@ -537,11 +537,10 @@ void CminusfBuilder::visit(ASTAssignExpression &node)
 
     node.var->accept(*this);
     auto var = varPtr;
-
     node.expression->accept(*this);
     auto store = expr;
 
-    if (var->get_type()->is_float_type())
+    if (var->get_type()->get_pointer_element_type()->is_float_type())
     {
         if (store->get_type()->is_integer_type())
         {
@@ -608,42 +607,68 @@ void CminusfBuilder::visit(ASTAdditiveExpression &node)
 
     if (node.additive_expression == nullptr)
     {
-        curr_op = LOAD;
         node.term->accept(*this);
     }
     else
     {
-        bool haveF = false;
-        curr_op = LOAD;
         node.additive_expression->accept(*this);
-        haveF = expr->get_type()->is_float_type() ? true : haveF;
-        Value *lhs = expr;
-        curr_op = LOAD;
-        haveF = expr->get_type()->is_float_type() ? true : haveF;
+        auto lRes = expr;
+        auto lType = lRes->get_type();
         node.term->accept(*this);
-        Value *rhs = expr;
-        switch (node.op)
+        auto rRes = expr;
+        auto rType = rRes->get_type();
+
+        if (lType->is_integer_type())
         {
-        case OP_PLUS:
-            if (haveF)
+            if (rType->is_float_type())
             {
-                expr = builder->create_fadd(lhs, rhs);
+                auto lCast = builder->create_sitofp(lRes, Type::get_float_type(module.get()));
+                if (node.op == OP_PLUS)
+                {
+                    expr = builder->create_fadd(lCast, rRes);
+                }
+                else
+                {
+                    expr = builder->create_fsub(lCast, rRes);
+                }
             }
             else
             {
-                expr = builder->create_iadd(lhs, rhs);
+                if (node.op == OP_PLUS)
+                {
+                    expr = builder->create_iadd(lRes, rRes);
+                }
+                else
+                {
+                    expr = builder->create_isub(lRes, rRes);
+                }
             }
-            break;
-        case OP_MINUS:
-            if (haveF)
+        }
+        else
+        {
+            if (rType->is_float_type())
             {
-                expr = builder->create_fsub(lhs, rhs);
+                if (node.op == OP_PLUS)
+                {
+                    expr = builder->create_fadd(lRes, rRes);
+                }
+                else
+                {
+                    expr = builder->create_fsub(lRes, rRes);
+                }
             }
             else
             {
-                expr = builder->create_isub(lhs, rhs);
+                auto rCast = builder->create_sitofp(rRes, Type::get_float_type(module.get()));
+                if (node.op == OP_PLUS)
+                {
+                    expr = builder->create_fadd(lRes, rRes);
+                }
+                else
+                {
+                    expr = builder->create_fsub(lRes, rRes);
+                }
             }
-            break;
         }
     }
 }
@@ -674,7 +699,7 @@ void CminusfBuilder::visit(ASTTerm &node)
     {
         if (rType->is_float_type())
         {
-            auto lCast = builder->create_zext(lRes, Type::get_float_type(module.get()));
+            auto lCast = builder->create_sitofp(lRes, Type::get_float_type(module.get()));
             if (node.op == OP_MUL)
             {
                 expr = builder->create_fmul(lCast, rRes);
@@ -711,14 +736,14 @@ void CminusfBuilder::visit(ASTTerm &node)
         }
         else
         {
-            auto rCast = builder->create_zext(rRes, Type::get_float_type(module.get()));
+            auto rCast = builder->create_sitofp(rRes, Type::get_float_type(module.get()));
             if (node.op == OP_MUL)
             {
-                expr = builder->create_fmul(lRes, rRes);
+                expr = builder->create_fmul(lRes, rCast);
             }
             else
             {
-                expr = builder->create_fdiv(lRes, rRes);
+                expr = builder->create_fdiv(lRes, rCast);
             }
         }
     }
