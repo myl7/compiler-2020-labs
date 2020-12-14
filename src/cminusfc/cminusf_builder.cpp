@@ -6,6 +6,32 @@
 #define CONST_FP(num) ConstantFP::get((float)num, module.get())
 #define CONST_ZERO(type) ConstantZero::get(type, module.get())
 
+#define BIN_CAST(a, b, ffunc, ifunc)                                                    \
+    if (a->get_type()->is_float_type())                                                 \
+    {                                                                                   \
+        if (b->get_type()->is_float_type())                                             \
+        {                                                                               \
+            expr = builder->create_##ffunc(a, b);                                       \
+        }                                                                               \
+        else                                                                            \
+        {                                                                               \
+            auto bCast = builder->create_sitofp(b, Type::get_float_type(module.get())); \
+            expr = builder->create_##ffunc(a, bCast);                                   \
+        }                                                                               \
+    }                                                                                   \
+    else                                                                                \
+    {                                                                                   \
+        if (b->get_type()->is_float_type())                                             \
+        {                                                                               \
+            auto aCast = builder->create_sitofp(a, Type::get_float_type(module.get())); \
+            expr = builder->create_##ffunc(aCast, b);                                   \
+        }                                                                               \
+        else                                                                            \
+        {                                                                               \
+            expr = builder->create_##ifunc(a, b);                                       \
+        }                                                                               \
+    }
+
 // You can define global variables here
 // to store state
 
@@ -548,165 +574,25 @@ void CminusfBuilder::visit(ASTSimpleExpression &node)
         auto a = lRes;
         auto b = rRes;
 
-        // TODO: cast.
-        // Currently, to sleep early, we only consider int case.
         switch (node.op)
         {
         case OP_LE:
-            if (a->get_type()->is_float_type())
-            {
-                if (b->get_type()->is_float_type())
-                {
-                    expr = builder->create_fcmp_le(a, b);
-                }
-                else
-                {
-                    // auto bCast = builder->create_zext(b, Type::get_float_type(module));
-                    // return builder->create_fcmp_le(a, bCast); // no return?
-                }
-            }
-            else
-            {
-                if (b->get_type()->is_float_type())
-                {
-                    // auto aCast = builder->create_zext(a, Type::get_float_type(module));
-                    // return builder->create_fcmp_le(aCast, b); // no return?
-                }
-                else
-                {
-                    // return builder->create_icmp_le(a, b); // no return?
-                }
-            }
+            BIN_CAST(a, b, fcmp_le, icmp_le);
             break;
         case OP_LT:
-            if (a->get_type()->is_float_type())
-            {
-                if (b->get_type()->is_float_type())
-                {
-                    expr = builder->create_fcmp_lt(a, b);
-                }
-                else
-                {
-                    auto bCast = builder->create_sitofp(b, Type::get_float_type(module.get()));
-                    expr = builder->create_fcmp_lt(a, bCast);
-                }
-            }
-            else
-            {
-                if (b->get_type()->is_float_type())
-                {
-                    auto aCast = builder->create_sitofp(a, Type::get_float_type(module.get()));
-                    expr = builder->create_fcmp_lt(aCast, b);
-                }
-                else
-                {
-                    expr = builder->create_icmp_lt(a, b);
-                }
-            }
+            BIN_CAST(a, b, fcmp_lt, icmp_lt);
             break;
         case OP_GT:
-            if (a->get_type()->is_float_type())
-            {
-                if (b->get_type()->is_float_type())
-                {
-                    // return builder->create_fcmp_gt(a, b);
-                }
-                else
-                {
-                    // auto bCast = builder->create_zext(b, Type::get_float_type(module));
-                    // return builder->create_fcmp_gt(a, bCast);
-                }
-            }
-            else
-            {
-                if (b->get_type()->is_float_type())
-                {
-                    // auto aCast = builder->create_zext(a, Type::get_float_type(module));
-                    // return builder->create_fcmp_gt(aCast, b);
-                }
-                else
-                {
-                    // return builder->create_icmp_gt(a, b);
-                }
-            }
+            BIN_CAST(a, b, fcmp_gt, icmp_gt);
             break;
         case OP_GE:
-            if (a->get_type()->is_float_type())
-            {
-                if (b->get_type()->is_float_type())
-                {
-                    // return builder->create_fcmp_ge(a, b);
-                }
-                else
-                {
-                    // auto bCast = builder->create_zext(b, Type::get_float_type(module));
-                    // return builder->create_fcmp_ge(a, bCast);
-                }
-            }
-            else
-            {
-                if (b->get_type()->is_float_type())
-                {
-                    // auto aCast = builder->create_zext(a, Type::get_float_type(module));
-                    // return builder->create_fcmp_ge(aCast, b);
-                }
-                else
-                {
-                    // return builder->create_icmp_ge(a, b);
-                }
-            }
+            BIN_CAST(a, b, fcmp_ge, icmp_ge);
             break;
         case OP_EQ:
-            if (a->get_type()->is_float_type())
-            {
-                if (b->get_type()->is_float_type())
-                {
-                    expr = builder->create_fcmp_eq(a, b);
-                }
-                else
-                {
-                    auto bCast = builder->create_sitofp(b, Type::get_float_type(module.get()));
-                    expr = builder->create_fcmp_eq(a, bCast);
-                }
-            }
-            else
-            {
-                if (b->get_type()->is_float_type())
-                {
-                    auto aCast = builder->create_sitofp(a, Type::get_float_type(module.get()));
-                    expr = builder->create_fcmp_eq(aCast, b);
-                }
-                else
-                {
-                    expr = builder->create_icmp_eq(a, b);
-                }
-            }
+            BIN_CAST(a, b, fcmp_eq, icmp_eq);
             break;
         default:
-            if (a->get_type()->is_float_type())
-            {
-                if (b->get_type()->is_float_type())
-                {
-                    // return builder->create_fcmp_ne(a, b);
-                }
-                else
-                {
-                    // auto bCast = builder->create_zext(b, Type::get_float_type(module));
-                    // return builder->create_fcmp_ne(a, bCast);
-                }
-            }
-            else
-            {
-                if (b->get_type()->is_float_type())
-                {
-                    // auto aCast = builder->create_zext(a, Type::get_float_type(module));
-                    // return builder->create_fcmp_ne(aCast, b);
-                }
-                else
-                {
-                    // return builder->create_icmp_ne(a, b);
-                }
-            }
+            BIN_CAST(a, b, fcmp_ne, icmp_ne);
             break;
         }
     }
