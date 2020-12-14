@@ -15,12 +15,22 @@
         }                                                                               \
         else                                                                            \
         {                                                                               \
+            auto bType = static_cast<IntegerType *>(b->get_type());                     \
+            if (bType->get_num_bits() == 1)                                             \
+            {                                                                           \
+                b = builder->create_zext(b, Type::get_int32_type(module.get()));        \
+            }                                                                           \
             auto bCast = builder->create_sitofp(b, Type::get_float_type(module.get())); \
             expr = builder->create_##ffunc(a, bCast);                                   \
         }                                                                               \
     }                                                                                   \
     else                                                                                \
     {                                                                                   \
+        auto aType = static_cast<IntegerType *>(a->get_type());                         \
+        if (aType->get_num_bits() == 1)                                                 \
+        {                                                                               \
+            a = builder->create_zext(a, Type::get_int32_type(module.get()));            \
+        }                                                                               \
         if (b->get_type()->is_float_type())                                             \
         {                                                                               \
             auto aCast = builder->create_sitofp(a, Type::get_float_type(module.get())); \
@@ -28,6 +38,11 @@
         }                                                                               \
         else                                                                            \
         {                                                                               \
+            auto bType = static_cast<IntegerType *>(b->get_type());                     \
+            if (bType->get_num_bits() == 1)                                             \
+            {                                                                           \
+                b = builder->create_zext(b, Type::get_int32_type(module.get()));        \
+            }                                                                           \
             expr = builder->create_##ifunc(a, b);                                       \
         }                                                                               \
     }
@@ -606,6 +621,23 @@ void CminusfBuilder::visit(ASTAdditiveExpression &node)
 
         if (lType->is_integer_type())
         {
+            auto liType = static_cast<IntegerType *>(lType);
+            if (liType->get_num_bits() == 1)
+            {
+                lRes = builder->create_zext(lRes, Type::get_int32_type(module.get()));
+            }
+        }
+        if (rType->is_integer_type())
+        {
+            auto riType = static_cast<IntegerType *>(rType);
+            if (riType->get_num_bits() == 1)
+            {
+                rRes = builder->create_zext(rRes, Type::get_int32_type(module.get()));
+            }
+        }
+
+        if (lType->is_integer_type())
+        {
             if (rType->is_float_type())
             {
                 auto lCast = builder->create_sitofp(lRes, Type::get_float_type(module.get()));
@@ -680,6 +712,23 @@ void CminusfBuilder::visit(ASTTerm &node)
     node.factor->accept(*this);
     auto rRes = expr;
     auto rType = expr->get_type();
+
+    if (lType->is_integer_type())
+    {
+        auto liType = static_cast<IntegerType *>(lType);
+        if (liType->get_num_bits() == 1)
+        {
+            lRes = builder->create_zext(lRes, Type::get_int32_type(module.get()));
+        }
+    }
+    if (rType->is_integer_type())
+    {
+        auto riType = static_cast<IntegerType *>(rType);
+        if (riType->get_num_bits() == 1)
+        {
+            rRes = builder->create_zext(rRes, Type::get_int32_type(module.get()));
+        }
+    }
 
     if (lType->is_integer_type())
     {

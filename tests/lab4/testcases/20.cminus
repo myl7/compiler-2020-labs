@@ -1,0 +1,8 @@
+void main(void) {
+    int a;
+    a = 1 > 2;
+    output(a);
+    a = (2 > 1.0) > (1 * 0 != 0);
+    output(a);
+    return;
+}
