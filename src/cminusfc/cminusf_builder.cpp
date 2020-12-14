@@ -461,42 +461,26 @@ void CminusfBuilder::visit(ASTReturnStmt &node)
         return;
     }
 
-    // TODO: This is a god-damn simple return without casting to pass tests.
     if (node.expression)
     {
         node.expression->accept(*this);
+
+        auto retType = builder->get_insert_block()->get_parent()->get_return_type();
+        if (expr->get_type()->is_integer_type() && retType->is_float_type())
+        {
+            expr = builder->create_sitofp(expr, Type::get_float_type(module.get()));
+        }
+        if (expr->get_type()->is_float_type() && retType->is_integer_type())
+        {
+            expr = builder->create_fptosi(expr, Type::get_int32_type(module.get()));
+        }
+
         builder->create_ret(expr);
     }
     else
     {
         builder->create_void_ret();
     }
-
-    // if (node.expression != nullptr)
-    // {
-    //     curr_op = LOAD;
-    //     node.expression->accept(*this);
-    //     Value *retVal;
-    //     // TODO add f or i
-    //     if (expr->get_type() == Type::get_int1_type(module.get())) // what happened ?
-    //     {
-    //         // cast i1 boolean true or false result to i32 0 or 1
-    //         auto retCast = builder->create_zext(expr, Type::get_int32_type(module.get()));
-    //         retVal = retCast;
-    //     }
-    //     else if (expr->get_type() == Type::get_int32_type(module.get()) || expr->get_type() == Type::get_float_type(module.get()))
-    //     {
-    //         retVal = expr;
-    //     }
-    //     else
-    //     {
-    //         std::cout << "Error unknown expression return type" << std::endl;
-    //     }
-    //     builder->create_store(retVal, return_alloca);
-    // }
-    // builder->create_br(return_block);
-    // is_returned = true;
-    // is_returned_record = true;
 }
 
 void CminusfBuilder::visit(ASTVar &node)
