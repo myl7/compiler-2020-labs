@@ -21,6 +21,8 @@ Value *expr;
 Value *varPtr;
 Value *return_alloca;
 
+Argument *arg;
+
 enum var_op
 {
     LOAD,
@@ -215,9 +217,12 @@ void CminusfBuilder::visit(ASTFunDeclaration &node)
     auto bb = BasicBlock::create(module.get(), node.id, func);
     builder->set_insert_point(bb);
 
-    for (const auto &param : node.params)
+    auto args = func->get_args();
+    auto i = 0;
+    for (auto a = args.begin(); a != args.end(); a++, i++)
     {
-        param->accept(*this);
+        arg = *a;
+        node.params[i]->accept(*this);
     }
     node.compound_stmt->accept(*this);
 
@@ -237,7 +242,8 @@ void CminusfBuilder::visit(ASTParam &node)
         type = Type::get_pointer_type(type);
     }
 
-    auto param = builder->create_alloca(type);
+    auto param = builder->create_alloca(arg->get_type());
+    builder->create_store(arg, param);
     if (!scope.push(node.id, param))
     {
         LOG(ERROR) << "Redeclare param: " << node.id;
@@ -376,7 +382,9 @@ void CminusfBuilder::visit(ASTSelectionStmt &node)
             builder->create_br(BB);
         }
         is_returned_record = false;
-    } else {
+    }
+    else
+    {
         builder->create_br(BB);
     }
     builder->set_insert_point(BB);
