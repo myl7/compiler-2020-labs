@@ -1,0 +1,21 @@
+void main(void) {
+    int a[10];
+    int b;
+    int c;
+    b = 1;
+    c = 0;
+    while (c < 10) {
+        a[c] = 3;
+        c = c + 1;
+    }
+    while (b <= 8) {
+        a[b + 1.5] = 2;
+        b = b + 1;
+    }
+    c = 0;
+    while (c < 10) {
+        output(a[c]);
+        c = c + 1;
+    }
+    return;
+}

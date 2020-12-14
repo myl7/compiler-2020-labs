@@ -271,40 +271,8 @@ void CminusfBuilder::visit(ASTCompoundStmt &node)
 
     scope.enter();
     // FIXME: Var declarations should be done in ASTVarDeclaration visit.
-    for (auto var_declaration : node.local_declarations)
-    {
-        if (var_declaration->type == TYPE_VOID)
-        {
-            std::cout << "Error no void type variable or array is allowed" << std::endl;
-        }
-        if (var_declaration->num != nullptr)
-        {
-            if (var_declaration->type == TYPE_INT)
-            {
-                auto arrType = ArrayType::get_int32_type(module.get());
-                auto arrptr = builder->create_alloca(arrType);
-                scope.push(var_declaration->id, arrptr);
-            }
-            if (var_declaration->type == TYPE_FLOAT)
-            {
-                auto arrType = ArrayType::get_float_type(module.get());
-                auto arrptr = builder->create_alloca(arrType);
-                scope.push(var_declaration->id, arrptr);
-            }
-        }
-        else
-        {
-            if (var_declaration->type == TYPE_INT)
-            {
-                auto var = builder->create_alloca(cminusType2Type(TYPE_INT, module.get()));
-                scope.push(var_declaration->id, var);
-            }
-            if (var_declaration->type == TYPE_FLOAT)
-            {
-                auto var = builder->create_alloca(cminusType2Type(TYPE_FLOAT, module.get()));
-                scope.push(var_declaration->id, var);
-            }
-        }
+    for (auto decl : node.local_declarations) {
+        decl->accept(*this);
     }
 
     for (auto stmt : node.statement_list)
@@ -501,7 +469,7 @@ void CminusfBuilder::visit(ASTVar &node)
 
         if (index->get_type()->is_float_type())
         {
-            index = builder->create_zext(index, Type::get_int32_type(module.get()));
+            index = builder->create_fptosi(index, Type::get_int32_type(module.get()));
         }
 
         auto cmp = builder->create_icmp_lt(index, CONST_ZERO(Type::get_int32_type(module.get())));
@@ -510,9 +478,10 @@ void CminusfBuilder::visit(ASTVar &node)
         builder->create_cond_br(cmp, tBB, fBB);
         builder->set_insert_point(tBB);
         builder->create_call(scope.find("neg_idx_except"), {});
+        builder->create_br(fBB);
         builder->set_insert_point(fBB);
 
-        Value *val = builder->create_gep(val, {CONST_ZERO(Type::get_int32_type(module.get())), index});
+        val = builder->create_gep(val, {CONST_ZERO(Type::get_int32_type(module.get())), index});
     }
 
     varPtr = val;
