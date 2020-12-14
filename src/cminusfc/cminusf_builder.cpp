@@ -426,7 +426,10 @@ void CminusfBuilder::visit(ASTIterationStmt &node)
     scope.enter();
     node.statement->accept(*this);
     scope.exit();
-    builder->create_br(condBB);
+    if (!is_returned)
+    {
+        builder->create_br(condBB);
+    }
 
     builder->set_insert_point(fBB);
     is_returned = false;

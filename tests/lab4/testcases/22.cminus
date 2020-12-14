@@ -1,0 +1,108 @@
+int arrrr[100];
+int hello;
+int xx;
+
+int assign(void)
+{
+    int i;
+    int j;
+    int k;
+    xx = 1;
+    k = i = j;
+    if (k = i = j)
+    {
+        int l;
+    }
+    k = i < j;
+    return k;
+}
+
+void iff(void)
+{
+    int i;
+    int j;
+    if (i < j)
+    {
+        int x;
+        int y;
+        x = 0;
+        return;
+    }
+    else
+    {
+        int y;
+        int z;
+        y = 0;
+        return;
+    }
+    i = 1;
+    j = 0;
+    if (i < j)
+    {
+        int x;
+        j = 2;
+    }
+    return;
+}
+
+void loop(void)
+{
+    int i;
+    int j;
+    i = 0;
+    j = 1;
+    while (i < 10)
+    {
+        int z;
+        i = i + 1;
+        while (j < 10)
+        {
+            int z;
+            j = j + 1;
+            return;
+        }
+    }
+    while (i < 10)
+        return;
+    return;
+}
+
+void main(void)
+{
+    int x;
+    int y;
+    int temp;
+    x = 1;
+    y = 100;
+    if (x > y)
+    {
+        int z;
+        if (x > y)
+        {
+            int zz;
+            x = 1;
+        }
+        else
+        {
+            int yy;
+            x = 2;
+        }
+        {
+            int t;
+        }
+    }
+    else
+    {
+        int z;
+        while (x == 1)
+        {
+            x = 2;
+        }
+        {
+            int t;
+        }
+    }
+    output(x);
+    output(y);
+    return;
+}
