@@ -10,7 +10,9 @@
 
 // You can define global variables here
 // to store state
-bool is_returned = false;
+
+// This marks a subprocess that will absolutely return.
+// So we can ignore the following content;
 bool is_returned_record = false;
 BasicBlock *return_block = nullptr;
 
@@ -287,20 +289,21 @@ void CminusfBuilder::visit(ASTCompoundStmt &node)
         }
     }
 
-    is_returned = false;
     for (auto stmt : node.statement_list)
     {
+        is_returned_record = false;
         stmt->accept(*this);
-        if (is_returned)
+        if (is_returned_record)
             break;
     }
 
-    if (return_block) {
+    if (is_returned_record && return_block)
+    {
         return_block->erase_from_parent();
+        is_returned_record = false;
+        return_block = nullptr;
     }
 
-    is_returned_record = is_returned;
-    is_returned = false;
     scope.exit();
 }
 
@@ -346,13 +349,14 @@ void CminusfBuilder::visit(ASTSelectionStmt &node)
     scope.enter();
     node.if_statement->accept(*this);
     scope.exit();
-    if (!is_returned_record)
+    if (is_returned_record)
     {
-        builder->create_br(BB);
+        tRet = true;
+        is_returned_record = false;
     }
     else
     {
-        tRet = true;
+        builder->create_br(BB);
     }
     is_returned_record = false;
     builder->set_insert_point(fBB);
@@ -362,26 +366,25 @@ void CminusfBuilder::visit(ASTSelectionStmt &node)
         node.else_statement->accept(*this);
         scope.exit();
 
-        if (!is_returned_record)
+        if (is_returned_record)
         {
-            builder->create_br(BB);
+            fRet = true;
+            is_returned_record = false;
         }
         else
         {
-            fRet = true;
+            builder->create_br(BB);
         }
         is_returned_record = false;
-    }
-    else
-    {
-        fRet = true;
+    } else {
+        builder->create_br(BB);
     }
     builder->set_insert_point(BB);
-    return_block = BB;
 
     if (tRet && fRet)
     {
         is_returned_record = true;
+        return_block = BB;
     }
 }
 
@@ -396,21 +399,17 @@ void CminusfBuilder::visit(ASTIterationStmt &node)
     auto fBB = BasicBlock::create(module.get(), "", builder->get_insert_block()->get_parent());
 
     builder->create_br(condBB);
+    builder->set_insert_point(condBB);
     node.expression->accept(*this);
     auto cond = expr;
     auto type = cond->get_type();
     if (type->is_integer_type())
     {
-        auto boolType = (IntegerType *)type;
-        auto bitNum = boolType->get_num_bits();
-        if (bitNum != 1)
-        {
-            cond = builder->create_zext(cond, Type::get_int1_type(module.get()));
-        }
+        cond = builder->create_icmp_ne(cond, CONST_ZERO(Type::get_int32_type(module.get())));
     }
-    else
+    else if (type->is_float_type())
     {
-        cond = builder->create_zext(cond, Type::get_int1_type(module.get()));
+        cond = builder->create_fcmp_ne(cond, CONST_ZERO(Type::get_float_type(module.get())));
     }
     builder->create_cond_br(cond, tBB, fBB);
 
@@ -421,6 +420,7 @@ void CminusfBuilder::visit(ASTIterationStmt &node)
     builder->create_br(condBB);
 
     builder->set_insert_point(fBB);
+    return_block = fBB;
 }
 
 void CminusfBuilder::visit(ASTReturnStmt &node)
@@ -439,7 +439,6 @@ void CminusfBuilder::visit(ASTReturnStmt &node)
         {
             builder->create_ret(CONST_ZERO(Type::get_int32_type(module.get())));
         }
-        is_returned = true;
         is_returned_record = true;
         return;
     }
@@ -454,7 +453,6 @@ void CminusfBuilder::visit(ASTReturnStmt &node)
     {
         builder->create_void_ret();
     }
-    is_returned = true;
     is_returned_record = true;
 
     // if (node.expression != nullptr)
