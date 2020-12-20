@@ -42,13 +42,21 @@ phi 节点用于辨认 SSA 模型中多个前驱所定的最终值。
 
 5. 算法是如何选择 `value`(变量最新的值)来替换 `load` 指令的（描述数据结构与维护方法）
 
+`var_val_stack[val]` 栈存放一些左值所可能使用的值。
+
+遇到 load 指令，`instr->replace_all_use_with(var_val_stack[l_val].back()); wait_delete.push_back(instr);` 代码块把 load 指令的输出用 `var_val_stack[l_val]` 的栈顶值替换（在 Value.cpp 中看到所有的使用都被 new_val Value 替代），同时把该 load 指令加入要删除的队列中。
+
+遇到 store 指令，`var_val_stack[l_val].push_back(r_val); wait_delete.push_back(instr);` 代码块把 store 指令的值作为一种新的可能加入到 `var_val_stack[l_val]` 栈中，同时把该 store 指令加入要删除的队列。
+
+最后，根据产生的 phi 指令，从前面的 var_val_stack 栈中取出每一块 value 和基本块组成 phi 语句。
+
 ### 代码阅读总结
 
 此次实验有什么收获
 
 ### 实验反馈 （可选 不会评分）
 
-对本次实验的建议
+代码建议增加注释。
 
 ### 组间交流 （可选）
 

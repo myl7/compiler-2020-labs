@@ -1,6 +1,8 @@
 # Lab5 实验报告
 
-小组成员 姓名 学号
+***REMOVED*** ***REMOVED***
+
+***REMOVED*** ***REMOVED***
 
 ## 实验要求
 
