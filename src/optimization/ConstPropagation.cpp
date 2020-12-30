@@ -3,10 +3,9 @@
 
 // 给出了返回整形值的常数折叠实现，大家可以参考，在此基础上拓展
 // 当然如果同学们有更好的方式，不强求使用下面这种方式
-ConstantInt *ConstFolder::compute(
-    Instruction::OpID op,
-    ConstantInt *value1,
-    ConstantInt *value2)
+// Updated by myl to use template
+template <typename T>
+T *ConstFolder::compute(Instruction::OpID op, T *value1, T *value2)
 {
 
     int c_value1 = value1->get_value();
@@ -14,17 +13,17 @@ ConstantInt *ConstFolder::compute(
     switch (op)
     {
     case Instruction::add:
-        return ConstantInt::get(c_value1 + c_value2, module_);
+        return T::get(c_value1 + c_value2, module_);
 
         break;
     case Instruction::sub:
-        return ConstantInt::get(c_value1 - c_value2, module_);
+        return T::get(c_value1 - c_value2, module_);
         break;
     case Instruction::mul:
-        return ConstantInt::get(c_value1 * c_value2, module_);
+        return T::get(c_value1 * c_value2, module_);
         break;
     case Instruction::sdiv:
-        return ConstantInt::get((int)(c_value1 / c_value2), module_);
+        return T::get((int)(c_value1 / c_value2), module_);
         break;
     default:
         return nullptr;

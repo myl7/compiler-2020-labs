@@ -12,9 +12,10 @@
 #include <unordered_map>
 
 // tips: 用来判断value是否为ConstantFP/ConstantInt
-ConstantFP* cast_constantfp(Value *value);
-ConstantInt* cast_constantint(Value *value);
+ConstantFP *cast_constantfp(Value *value);
+ConstantInt *cast_constantint(Value *value);
 
+typedef std::unordered_map<std::string, Constant *> ConstMap;
 
 // tips: ConstFloder类
 
@@ -22,10 +23,8 @@ class ConstFolder
 {
 public:
     ConstFolder(Module *m) : module_(m) {}
-    ConstantInt *compute(
-        Instruction::OpID op,
-        ConstantInt *value1,
-        ConstantInt *value2);
+    template <typename T>
+    T *compute(Instruction::OpID op, T *value1, T *value2);
     // ...
 private:
     Module *module_;
@@ -36,6 +35,9 @@ class ConstPropagation : public Pass
 public:
     ConstPropagation(Module *m) : Pass(m) {}
     void run();
+
+private:
+    ConstMap &&pass_bb(BasicBlock *bb, ConstMap &&const_map);
 };
 
 #endif
