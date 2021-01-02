@@ -1,4 +1,5 @@
 #include "ActiveVars.hpp"
+#include <algorithm>
 
 void ActiveVars::run()
 {
@@ -9,27 +10,52 @@ void ActiveVars::run()
     {
         if (func->get_basic_blocks().empty())
         {
+            // EXIT
             continue;
         }
         else
         {
             func_ = func;
-            
+            live_in.clear();
+            live_out.clear();
+
             for (auto &BB : func_->get_basic_blocks())
             {
                 std::set<Value *> InSet = {}, OutSet = {};
+
+                for (auto &succBB : BB->get_succ_basic_blocks())
+                {
+                    std::set_union(live_in[succBB].begin(), live_in[succBB].end(), OutSet.begin(), OutSet.end(), std::back_inserter(OutSet));
+                }
+                live_out.insert({BB, OutSet});
+
+                /* remove
                 for (auto &itemIn : func_->get_args())
                 {
                     InSet.insert(itemIn);
+                    // xxx loop
                 }
-                // InSet_B := use_BB + all(OutSet_B - def_BB)
-                // OutSet_B := all_S_is_B's_successor(InSet_S)
-                live_in.insert({BB, InSet});
-
-                for (auto &itemOut : func_->get_use_list())
+                */
+                for (auto &itemUse : func_->get_use_list())
                 {
-                    InSet.insert(itemOut);
+                    InSet.insert(itemUse.val_);
                 }
+
+                // get def -> defSet
+                std::set<Value *> tmpSet = {};
+                for (auto &item : OutSet)
+                {
+                    /* TODO
+                    if (item != def)
+                        tmpSet.insert(item);
+                    */
+                }
+                std::set_union(InSet.begin(), InSet.end(), tmpSet.begin(), tmpSet.end(), std::back_inserter(InSet));
+
+                // OutSet_B := all_S_is_B's_successor(InSet_S)
+                // InSet_B := use_BB + all(OutSet_B - def_BB)
+
+                live_in.insert({BB, InSet});
             }
 
             // 在此分析 func_ 的每个bb块的活跃变量，并存储在 live_in live_out 结构内
