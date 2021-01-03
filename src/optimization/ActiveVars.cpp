@@ -39,17 +39,25 @@ void ActiveVars::run()
                     }
 
                     // get def -> defSet(Howto) TODO
+                    // get Ins RetVal
                     std::set<Value *> tmpSet = {};
+                    std::list<Instruction *> defList = BB->get_instructions();
+                    for (auto &itemRet : defList)
+                    {
+                        // if (Value(itemRet))
+                    }
+
                     for (auto &item : OutSet)
                     {
+
                         /*
-                        if (item != def)
+                        if (item not in def)
                             tmpSet.insert(item);
                         */
                     }
                     std::set_union(InSet.begin(), InSet.end(), tmpSet.begin(), tmpSet.end(), std::back_inserter(InSet));
 
-                    // if tmpSet or InSet == InSet do nothing
+                    // if ((tmpSet or InSet) == InSet) do nothing
                     // else flag = 1
 
                     live_in.insert({BB, InSet});
