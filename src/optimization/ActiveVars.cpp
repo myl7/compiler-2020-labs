@@ -39,23 +39,42 @@ void ActiveVars::run()
                     }
 
                     // get def -> defSet(Howto) TODO
-                    // get Ins RetVal
-                    std::set<Value *> tmpSet = {};
-                    std::list<Instruction *> defList = BB->get_instructions();
-                    for (auto &itemRet : defList)
+                    std::set<Value *> tmpSet = {}, InSetNew = {};
+                    std::set<Instruction *> defSet = {};
+                    for (auto &itemDef : BB->get_instructions())
                     {
-                        // if (Value(itemRet))
+                        Instruction::OpID type = itemDef->get_instr_type();
+                        // ret br phi gep call alloca
+                        if (type == 0 || type == 1 || type == 10 || type == 15 || type == 16 || type == 17)
+                        {
+                            continue;
+                        }
+
+                        std::set<Instruction *> left_op_set = {}, right_op_set = {};
+                        left_op_set.insert(itemDef);
+                        for (auto &op : itemDef->get_operands()) // ? insert instr->get_oprand(0)
+                        {
+                            right_op_set.insert(static_cast<Instruction *>(op));
+                        }
+                        // if (Value(itemDef))
+                        if (right_op_set.find(itemDef) != right_op_set.end())
+                            defSet.insert(itemDef);
                     }
 
+                    /*
                     for (auto &item : OutSet)
                     {
-
-                        /*
                         if (item not in def)
                             tmpSet.insert(item);
-                        */
                     }
-                    std::set_union(InSet.begin(), InSet.end(), tmpSet.begin(), tmpSet.end(), std::back_inserter(InSet));
+                    */
+                    std::set_difference(OutSet.begin(), OutSet.end(), defSet.begin(), defSet.end(), std::back_inserter(tmpSet));
+                    std::set_union(InSet.begin(), InSet.end(), tmpSet.begin(), tmpSet.end(), std::back_inserter(InSetNew));
+
+                    if (!(!(InSet < InSetNew) && !(InSet > InSetNew)))
+                    {
+                        flag = 1;
+                    }
 
                     // if ((tmpSet or InSet) == InSet) do nothing
                     // else flag = 1
