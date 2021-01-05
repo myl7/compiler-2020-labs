@@ -52,13 +52,15 @@ void ActiveVars::run()
 
                         std::set<Instruction *> left_op_set = {}, right_op_set = {};
                         left_op_set.insert(itemDef);
-                        for (auto &op : itemDef->get_operands()) // ? insert instr->get_oprand(0)
+                        for (auto &op : itemDef->get_operands())
                         {
                             right_op_set.insert(static_cast<Instruction *>(op));
                         }
-                        // if (Value(itemDef))
                         if (right_op_set.find(itemDef) != right_op_set.end())
+                        {
                             defSet.insert(itemDef);
+                        }
+                        // if (Value(itemDef))
                     }
 
                     /*

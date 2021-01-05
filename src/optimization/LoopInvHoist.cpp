@@ -11,12 +11,13 @@ void LoopInvHoist::run()
     loop_searcher.run();
 
     // 接下来由你来补充啦！
+
     m_->set_print_name();
     for (auto &func : m_->get_functions())
     {
         for (auto &BB : func->get_basic_blocks())
         {
-            std::set<Instruction *> left_op_set = {}, right_op_set = {};
+            std::set<Instruction *> lvalSet = {}, rvalSet = {};
             for (auto &instr : BB->get_instructions())
             {
                 Instruction::OpID type = instr->get_instr_type();
@@ -25,17 +26,21 @@ void LoopInvHoist::run()
                 {
                     continue;
                 }
-                left_op_set.insert(instr);
+
+                lvalSet.insert(instr);
                 for (auto op : instr->get_operands()) // ? insert instr->get_oprand(0)
                 {
-                    right_op_set.insert(static_cast<Instruction *>(op));
+                    rvalSet.insert(static_cast<Instruction *>(op));
                 }
             }
-            std::cout << "right_op_set" << '\n';
-            for (auto r : right_op_set)
+            /*
+
+            std::cout << "rvalSet" << '\n';
+            for (auto &rvalue : rvalSet)
             {
-                std::cout << r->get_name() << '\n';
+                std::cout << rvalue->get_name() << '\n';
             }
+            */
         }
     }
 }
