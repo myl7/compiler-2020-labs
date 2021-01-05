@@ -9,13 +9,14 @@
 #include "IRBuilder.h"
 #include <vector>
 #include <stack>
-#include <unordered_map>
+#include <map>
+#include <set>
 
 // tips: 用来判断value是否为ConstantFP/ConstantInt
 ConstantFP *cast_constantfp(Value *value);
 ConstantInt *cast_constantint(Value *value);
 
-typedef std::unordered_map<std::string, Constant *> ConstMap;
+typedef std::map<std::string, Constant *> ConstMap;
 
 // tips: ConstFloder类
 
@@ -37,7 +38,9 @@ public:
     void run();
 
 private:
-    ConstMap &&pass_bb(BasicBlock *bb, ConstMap &&const_map);
+    void pass_bb(BasicBlock *bb, ConstMap const_map);
+
+    std::set<std::string> bb_passed_set;
 };
 
 #endif

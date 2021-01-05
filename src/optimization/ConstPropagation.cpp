@@ -57,8 +57,68 @@ ConstantInt *cast_constantint(Value *value)
     }
 }
 
+/**
+ * Pass through a BB, perform const propagation, and update const variable set, and continue to next bb
+ * TODO: remove const br
+ */
+void ConstPropagation::pass_bb(BasicBlock *bb, ConstMap const_map)
+{
+    bb_passed_set.insert(bb->get_name());
+
+    ConstMap::iterator k;
+
+    for (auto ins : bb->get_instructions())
+    {
+        auto res_name = ins->get_operand(0)->get_name();
+
+        if (ins->is_fp2si())
+        {
+            auto a = ins->get_operand(1);
+            auto a_const = cast_constantfp(a);
+            if (a_const)
+            {
+                auto res_v = int(a_const->get_value());
+                auto res = ConstantInt::get(res_v, m_);
+                const_map.insert({res_name, res});
+                bb->delete_instr(ins);
+            }
+            else if ((k = const_map.find(a->get_name())) != const_map.end())
+            {
+                auto a_const = dynamic_cast<ConstantFP *>(k->second);
+                auto res_v = int(a_const->get_value());
+                auto res = ConstantInt::get(res_v, m_);
+                const_map.insert({res_name, res});
+                bb->delete_instr(ins);
+            }
+        }
+        else if (ins->is_si2fp())
+        {
+        }
+        // TODO:
+    }
+
+    std::map<std::string, ConstMap>::iterator i;
+
+    for (auto succ : bb->get_succ_basic_blocks())
+    {
+        if (bb_passed_set.find(bb->get_name()) != bb_passed_set.end())
+        {
+            pass_bb(succ, const_map);
+        }
+    }
+}
 
 void ConstPropagation::run()
 {
-    // 从这里开始吧！
+    auto func_list = m_->get_functions();
+    for (auto func : func_list)
+    {
+        if (func->get_basic_blocks().size() == 0)
+        {
+            continue;
+        }
+
+        auto bb = func->get_entry_block();
+        pass_bb(bb, ConstMap{});
+    }
 }
