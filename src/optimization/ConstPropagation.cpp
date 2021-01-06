@@ -97,11 +97,9 @@ void ConstPropagation::pass_bb(BasicBlock *bb, ConstMap const_map)
         // TODO:
     }
 
-    std::map<std::string, ConstMap>::iterator i;
-
     for (auto succ : bb->get_succ_basic_blocks())
     {
-        if (bb_passed_set.find(bb->get_name()) != bb_passed_set.end())
+        if (bb_passed_set.find(succ->get_name()) != bb_passed_set.end())
         {
             pass_bb(succ, const_map);
         }
