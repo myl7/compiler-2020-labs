@@ -27,11 +27,14 @@ void ActiveVars::run()
                 for (auto &BB : func_->get_basic_blocks())
                 {
                     std::set<Value *> InSet = {}, OutSet = {};
+                    // Out
                     for (auto &succBB : BB->get_succ_basic_blocks())
                     {
                         std::set_union(live_in[succBB].begin(), live_in[succBB].end(), OutSet.begin(), OutSet.end(), std::inserter(OutSet, OutSet.begin()));
                     }
                     live_out.insert({BB, OutSet});
+
+                    // In
                     for (auto &itemUse : func_->get_use_list())
                     {
                         // std::cout << itemUse.val_->get_name();
