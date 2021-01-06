@@ -34,6 +34,24 @@ Constant *ConstFolder::compute2(Instruction::OpID op, Constant *a, Constant *b)
     }
 }
 
+Constant *ConstFolder::compute1(Instruction::OpID op, Constant *a)
+{
+    auto ai = dynamic_cast<ConstantInt *>(a);
+    auto af = dynamic_cast<ConstantFP *>(a);
+
+    switch (op)
+    {
+    case Instruction::fptosi:
+        return ConstantInt::get(int(af->get_value()), module_);
+    case Instruction::sitofp:
+        return ConstantFP::get(float(ai->get_value()), module_);
+    case Instruction::zext:
+        return ConstantInt::get(bool(ai->get_value()), module_);
+    default:
+        return nullptr;
+    }
+}
+
 // 用来判断value是否为ConstantFP，如果不是则会返回nullptr
 ConstantFP *cast_constantfp(Value *value)
 {
@@ -65,6 +83,10 @@ Constant *ConstFolder::compute(Instruction *ins, std::vector<Constant *> is_cons
     if (ins->is_add() || ins->is_sub() || ins->is_mul() || ins->is_div() || ins->is_fadd() || ins->is_fsub() || ins->is_fmul() || ins->is_fdiv())
     {
         return compute2(ins->get_instr_type(), is_const_args[0], is_const_args[1]);
+    }
+    if (ins->is_fp2si() || ins->is_si2fp() || ins->is_zext())
+    {
+        return compute1(ins->get_instr_type(), is_const_args[0]);
     }
     return nullptr;
 }
