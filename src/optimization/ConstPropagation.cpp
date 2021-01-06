@@ -1,6 +1,5 @@
 #include "ConstPropagation.hpp"
 #include "logging.hpp"
-#include <cassert>
 
 // 给出了返回整形值的常数折叠实现，大家可以参考，在此基础上拓展
 // 当然如果同学们有更好的方式，不强求使用下面这种方式
@@ -76,7 +75,6 @@ Constant *ConstFolder::compute(Instruction *ins, std::vector<Constant *> is_cons
  */
 void ConstPropagation::pass_bb(BasicBlock *bb, ConstMap const_map)
 {
-    LOG(DEBUG) << "Pass BB: " << bb->get_name();
     bb_passed_set.insert(bb->get_name());
 
     ConstMap::iterator k;
@@ -93,8 +91,6 @@ void ConstPropagation::pass_bb(BasicBlock *bb, ConstMap const_map)
 
         for (auto i = 0; i < ins->get_num_operand(); i++)
         {
-            LOG(DEBUG) << "check ops";
-
             auto op = ins->get_operand(i);
             auto op_iconst = cast_constantint(op);
             auto op_fconst = cast_constantfp(op);
@@ -112,17 +108,12 @@ void ConstPropagation::pass_bb(BasicBlock *bb, ConstMap const_map)
                 is_const_args[i] = nullptr;
             }
 
-            LOG(DEBUG) << "check const map";
-
             if ((k = const_map.find(op->get_name())) != const_map.end())
             {
-                LOG(DEBUG) << "found in const map";
                 ins->set_operand(i, k->second);
                 is_const_args[i] = k->second;
             }
         }
-
-        LOG(DEBUG) << "check ops ok";
 
         auto is_res_const = true;
         for (auto arg : is_const_args)
@@ -133,16 +124,8 @@ void ConstPropagation::pass_bb(BasicBlock *bb, ConstMap const_map)
             }
         }
 
-        auto log = ins->get_name() + " gets ";
-        for (auto arg : is_const_args)
-        {
-            log += (arg == nullptr ? "var " : "const ");
-        }
-        LOG(DEBUG) << log;
-
         if (is_res_const)
         {
-            LOG(DEBUG) << ins->get_name() << " is const";
             auto res_new = ConstFolder(m_).compute(ins, is_const_args);
             if (res_new != nullptr)
             {
@@ -158,8 +141,6 @@ void ConstPropagation::pass_bb(BasicBlock *bb, ConstMap const_map)
     {
         bb->delete_instr(ins);
     }
-
-    LOG(DEBUG) << "Succ BB num: " << bb->get_succ_basic_blocks().size();
 
     for (auto succ : bb->get_succ_basic_blocks())
     {
