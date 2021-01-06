@@ -24,9 +24,9 @@ class ConstFolder
 {
 public:
     ConstFolder(Module *m) : module_(m) {}
-    template <typename T>
-    T *compute(Instruction::OpID op, T *value1, T *value2);
-    // ...
+    Constant *compute2(Instruction::OpID op, Constant *value1, Constant *value2);
+    Constant *compute(Instruction *ins, std::vector<Constant *> is_const_args);
+
 private:
     Module *module_;
 };
