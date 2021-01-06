@@ -34,6 +34,54 @@ Constant *ConstFolder::compute2(Instruction::OpID op, Constant *a, Constant *b)
     }
 }
 
+Constant *ConstFolder::compute2cmp(CmpInst::CmpOp op, Constant *a, Constant *b)
+{
+    auto ai = dynamic_cast<ConstantInt *>(a);
+    auto bi = dynamic_cast<ConstantInt *>(b);
+
+    switch (op)
+    {
+    case CmpInst::CmpOp::EQ:
+        return ConstantInt::get(ai->get_value() == bi->get_value(), module_);
+    case CmpInst::CmpOp::NE:
+        return ConstantInt::get(ai->get_value() != bi->get_value(), module_);
+    case CmpInst::CmpOp::LE:
+        return ConstantInt::get(ai->get_value() <= bi->get_value(), module_);
+    case CmpInst::CmpOp::LT:
+        return ConstantInt::get(ai->get_value() < bi->get_value(), module_);
+    case CmpInst::CmpOp::GE:
+        return ConstantInt::get(ai->get_value() >= bi->get_value(), module_);
+    case CmpInst::CmpOp::GT:
+        return ConstantInt::get(ai->get_value() > bi->get_value(), module_);
+    default:
+        return nullptr;
+    }
+}
+
+Constant *ConstFolder::compute2fcmp(FCmpInst::CmpOp op, Constant *a, Constant *b)
+{
+    auto ai = dynamic_cast<ConstantFP *>(a);
+    auto bi = dynamic_cast<ConstantFP *>(b);
+
+    switch (op)
+    {
+    case FCmpInst::CmpOp::EQ:
+        return ConstantInt::get(ai->get_value() == bi->get_value(), module_);
+    case FCmpInst::CmpOp::NE:
+        return ConstantInt::get(ai->get_value() != bi->get_value(), module_);
+    case FCmpInst::CmpOp::LE:
+        return ConstantInt::get(ai->get_value() <= bi->get_value(), module_);
+    case FCmpInst::CmpOp::LT:
+        return ConstantInt::get(ai->get_value() < bi->get_value(), module_);
+    case FCmpInst::CmpOp::GE:
+        return ConstantInt::get(ai->get_value() >= bi->get_value(), module_);
+    case FCmpInst::CmpOp::GT:
+        return ConstantInt::get(ai->get_value() > bi->get_value(), module_);
+    default:
+        return nullptr;
+    }
+}
+
 Constant *ConstFolder::compute1(Instruction::OpID op, Constant *a)
 {
     auto ai = dynamic_cast<ConstantInt *>(a);
@@ -84,9 +132,21 @@ Constant *ConstFolder::compute(Instruction *ins, std::vector<Constant *> is_cons
     {
         return compute2(ins->get_instr_type(), is_const_args[0], is_const_args[1]);
     }
-    if (ins->is_fp2si() || ins->is_si2fp() || ins->is_zext())
+    else if (ins->is_fp2si() || ins->is_si2fp() || ins->is_zext())
     {
         return compute1(ins->get_instr_type(), is_const_args[0]);
+    }
+    else if (ins->is_cmp())
+    {
+        auto cmp_ins = dynamic_cast<CmpInst *>(ins);
+        auto op = cmp_ins->get_cmp_op();
+        return compute2cmp(op, is_const_args[0], is_const_args[1]);
+    }
+    else if (ins->is_fcmp())
+    {
+        auto fcmp_ins = dynamic_cast<FCmpInst *>(ins);
+        auto op = fcmp_ins->get_cmp_op();
+        return compute2fcmp(op, is_const_args[0], is_const_args[1]);
     }
     return nullptr;
 }
@@ -107,6 +167,26 @@ void ConstPropagation::pass_bb(BasicBlock *bb, ConstMap const_map)
         if (ins->get_num_operand() <= 0)
         {
             continue;
+        }
+
+        if (ins->is_phi())
+        {
+            for (auto i = 0; i < ins->get_num_operand() / 2; i++)
+            {
+                auto l = dynamic_cast<BasicBlock *>(ins->get_operand(i * 2 + 1));
+                auto in_pre = false;
+                for (auto pre : bb->get_pre_basic_blocks())
+                {
+                    if (pre == l)
+                    {
+                        in_pre = true;
+                    }
+                }
+                if (!in_pre)
+                {
+                    ins->remove_operands(i * 2, i * 2 + 1);
+                }
+            }
         }
 
         std::vector<Constant *> is_const_args(ins->get_num_operand());
@@ -162,6 +242,35 @@ void ConstPropagation::pass_bb(BasicBlock *bb, ConstMap const_map)
     for (auto ins : ins2del)
     {
         bb->delete_instr(ins);
+    }
+
+    auto last = dynamic_cast<BranchInst *>(bb->get_terminator());
+    if (last && last->is_cond_br())
+    {
+        auto known = false;
+        auto branch = true;
+
+        auto cond_const = cast_constantint(last->get_operand(0));
+        if (cond_const)
+        {
+            known = true;
+            branch = cond_const->get_value();
+        }
+        else if ((k = const_map.find(last->get_operand(0)->get_name())) != const_map.end())
+        {
+            known = true;
+            branch = dynamic_cast<ConstantInt *>(k->second)->get_value();
+        }
+
+        if (known)
+        {
+            auto a = last->get_operand(branch ? 1 : 2);
+            auto b = dynamic_cast<BasicBlock *>(last->get_operand(branch ? 2 : 1));
+            last->remove_operands(0, 2);
+            last->add_operand(a);
+            last->add_use(a);
+            bb->remove_succ_basic_block(b);
+        }
     }
 
     for (auto succ : bb->get_succ_basic_blocks())

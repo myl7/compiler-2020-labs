@@ -25,6 +25,8 @@ class ConstFolder
 public:
     ConstFolder(Module *m) : module_(m) {}
     Constant *compute2(Instruction::OpID op, Constant *value1, Constant *value2);
+    Constant *compute2cmp(CmpInst::CmpOp op, Constant *a, Constant *b);
+    Constant *compute2fcmp(FCmpInst::CmpOp op, Constant *a, Constant *b);
     Constant *compute1(Instruction::OpID op, Constant *a);
     Constant *compute(Instruction *ins, std::vector<Constant *> is_const_args);
 
