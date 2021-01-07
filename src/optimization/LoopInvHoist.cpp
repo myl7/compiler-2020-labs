@@ -15,13 +15,11 @@ void LoopInvHoist::run()
     {
         for (auto bb_set : loop_searcher.get_loops_in_func(func))
         {
-            auto parent = loop_searcher.get_parent_loop(bb_set);
-            if (!parent)
+            auto base = loop_searcher.get_loop_base(bb_set);
+            if (base->get_pre_basic_blocks().size() <= 0)
             {
                 continue;
             }
-
-            auto base = loop_searcher.get_loop_base(bb_set);
 
             // Get defs
             std::set<std::string> defs;
