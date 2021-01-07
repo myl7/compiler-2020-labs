@@ -2,11 +2,104 @@
 #include <algorithm>
 #include "logging.hpp"
 
+std::map<BasicBlock *, std::set<Value *>> useSet, defSet;
+
 void ActiveVars::run()
 {
     std::ofstream output_active_vars;
     output_active_vars.open("active_vars.json", std::ios::out);
     output_active_vars << "[";
+
+    for (auto &func : this->m_->get_functions())
+    {
+        if (func->get_basic_blocks().empty())
+        {
+            // EXIT
+            continue;
+        }
+        else
+        {
+            func_ = func;
+            for (auto &BB : func_->get_basic_blocks())
+            {
+                std::set<Value *> lhsSet = {}, rhsSet = {};
+                for (auto &instr : BB->get_instructions())
+                {
+                    Instruction::OpID type = instr->get_instr_type();
+                    if (type == Instruction::OpID::ret)
+                    {
+                        if (!(static_cast<ReturnInst *>(instr)->is_void_ret()))
+                        {
+                            if (lhsSet.find(instr->get_operand(0)) == lhsSet.end())
+                            {
+                                rhsSet.insert(instr->get_operand(0));
+                            }
+                        }
+                        continue;
+                    }
+                    if (type == Instruction::OpID::br)
+                    {
+                        if (instr->get_operands().size() == 3)
+                        {
+                            if (lhsSet.find(instr->get_operand(0)) == lhsSet.end() && instr->get_operand(0)->get_name() != "")
+                            {
+                                rhsSet.insert(instr->get_operand(0));
+                            }
+                        }
+                        continue;
+                    }
+                    if (type == Instruction::OpID::alloca)
+                    {
+                        // TODO
+                        continue;
+                    }
+                    if (type == Instruction::OpID::phi)
+                    {
+                        // TODO
+                        continue;
+                    }
+                    if (type == Instruction::OpID::call)
+                    {
+                        if (!(instr->is_void()))
+                        {
+                            if (rhsSet.find(instr) == rhsSet.end())
+                            {
+                                lhsSet.insert(instr);
+                            }
+                        }
+                        for (int i = 0; i < instr->get_num_operand(); i++)
+                        {
+                            if (lhsSet.find(instr->get_operand(i)) == lhsSet.end() && instr->get_operand(i)->get_name() != "")
+                            {
+                                rhsSet.insert(instr->get_operand(i));
+                            }
+                        }
+                        continue;
+                    }
+                    if (type == Instruction::OpID::getelementptr)
+                    {
+                        // TODO
+                        continue;
+                    }
+                    if (rhsSet.find(instr) == rhsSet.end())
+                    {
+                        lhsSet.insert(instr);
+                    }
+                    // std::cout << "lhs insert" << ":" << BB->get_name() << std::endl;
+                    for (auto &op : instr->get_operands())
+                    {
+                        if (lhsSet.find(op) == lhsSet.end() && op->get_name() != "")
+                        {
+                            rhsSet.insert(static_cast<Instruction *>(op));
+                        }
+                    }
+                }
+                useSet.insert({BB, lhsSet});
+                defSet.insert({BB, rhsSet});
+            }
+        }
+    }
+    // std::cout << "useList gen" << std::endl;
     for (auto &func : this->m_->get_functions())
     {
         if (func->get_basic_blocks().empty())
@@ -19,15 +112,21 @@ void ActiveVars::run()
             func_ = func;
             live_in.clear();
             live_out.clear();
-            int flag = 1;
 
+            int flag = 1;
             while (flag == 1)
+
             {
                 flag = 0;
                 for (auto &BB : func_->get_basic_blocks())
                 {
-                    std::set<Value *> InSet = {}, OutSet = {};
+                    if ((BB->get_succ_basic_blocks().size() == 0) && (BB->get_pre_basic_blocks().size() == 0))
+                    {
+                        continue;
+                    }
+
                     // Out
+                    std::set<Value *> OutSet = {};
                     for (auto &succBB : BB->get_succ_basic_blocks())
                     {
                         std::set_union(live_in[succBB].begin(), live_in[succBB].end(), OutSet.begin(), OutSet.end(), std::inserter(OutSet, OutSet.begin()));
@@ -35,60 +134,27 @@ void ActiveVars::run()
                     live_out.insert({BB, OutSet});
 
                     // In
-                    for (auto &itemUse : func_->get_use_list())
+                    std::set<Value *> tmpSet = OutSet;
+                    for (auto &defItem : defSet[BB])
                     {
-                        // std::cout << itemUse.val_->get_name();
-                        InSet.insert(itemUse.val_);
-                    }
-                    std::set<Value *> tmpSet = {}, InSetNew = {};
-                    std::set<Value *> defSet = {};
-                    for (auto &itemDef : BB->get_instructions())
-                    {
-                        Instruction::OpID type = itemDef->get_instr_type();
-                        // skip ret br phi gep call alloca instr
-                        if (type == 0 || type == 1 || type == 10 || type == 15 || type == 16 || type == 17)
+                        if (tmpSet.find(defItem) != tmpSet.end())
                         {
-                            continue;
-                        }
-
-                        std::set<Instruction *> left_op_set = {}, right_op_set = {};
-                        left_op_set.insert(itemDef);
-                        for (auto &op : itemDef->get_operands())
-                        {
-                            right_op_set.insert(static_cast<Instruction *>(op));
-                        }
-                        if (right_op_set.find(itemDef) != right_op_set.end())
-                        {
-                            defSet.insert(itemDef);
+                            tmpSet.erase(defItem);
                         }
                     }
-                    if (BB->get_name() == "label_entry")
-                    {
-                        for (auto &itemDef : func_->get_args())
-                        {
-                            defSet.insert(static_cast<Value *>(itemDef));
-                        }
-                    }
-
-                    std::set_difference(OutSet.begin(), OutSet.end(), defSet.begin(), defSet.end(), std::inserter(tmpSet, tmpSet.begin()));
-                    std::set_union(InSet.begin(), InSet.end(), tmpSet.begin(), tmpSet.end(), std::inserter(InSetNew, InSetNew.begin()));
-                    // InSetNew will be larger or equal
+                    std::set<Value *> InSet = {};
+                    std::set_union(useSet[BB].begin(), useSet[BB].end(), tmpSet.begin(), tmpSet.end(), std::inserter(InSet, InSet.begin()));
+                    // InSet will be larger or equal
                     // if ((tmpSet or InSet) == InSet) do nothing
                     // else flag = 1
-                    if (InSet.size() != InSetNew.size())
+                    if (InSet.size() != useSet[BB].size())
                     {
-                        std::cout << BB->get_name() << std::endl;
+                        // std::cout << BB->get_name() << std::endl;
                         flag = 1;
                     }
-                    // std::cout << BB->get_name() << std::endl;
-
                     live_in.insert({BB, InSet});
-
-                    // OutSet_B := all_S_is_B's_successor(InSet_S)
-                    // InSet_B := use_BB + all(OutSet_B - def_BB)
                 }
             }
-
             func_->set_instr_name();
             // 在此分析 func_ 的每个bb块的活跃变量，并存储在 live_in live_out 结构内
 
