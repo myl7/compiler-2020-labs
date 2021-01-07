@@ -190,7 +190,14 @@ void ActiveVars::run()
                     std::set<Value *> OutSet = {};
                     for (auto &succBB : BB->get_succ_basic_blocks())
                     {
-                        std::set_union(live_in[succBB].begin(), live_in[succBB].end(), OutSet.begin(), OutSet.end(), std::inserter(OutSet, OutSet.begin()));
+                        for (auto &item : live_in[succBB])
+                        {
+                            if (OutSet.find(item) == OutSet.end())
+                            {
+                                OutSet.insert(item);
+                            }
+                        }
+                        // std::set_union(live_in[succBB].begin(), live_in[succBB].end(), OutSet.begin(), OutSet.end(), std::inserter(OutSet, OutSet.begin()));
                     }
                     live_out.insert({BB, OutSet});
 
@@ -204,11 +211,21 @@ void ActiveVars::run()
                         }
                     }
                     std::set<Value *> InSet = {};
-                    std::set_union(useSet[BB].begin(), useSet[BB].end(), tmpSet.begin(), tmpSet.end(), std::inserter(InSet, InSet.begin()));
+                    // LOG_DEBUG << "use " << BB->get_name() << " " << (*(useSet[BB].begin()))->get_name();
+                    for (auto &item : useSet[BB])
+                    {
+                        if (tmpSet.find(item) == tmpSet.end())
+                        {
+                            tmpSet.insert(item);
+                        }
+                    }
+                    // std::set_union(useSet[BB].begin(), useSet[BB].end(), tmpSet.begin(), tmpSet.end(), std::inserter(InSet, InSet.begin()));
+
                     // InSet will be larger or equal
                     // if ((tmpSet or InSet) == InSet) do nothing
                     // else flag = 1
-                    std::cout << InSet.size();
+
+                    // std::cout << InSet.size();
                     if (InSet.size() != useSet[BB].size())
                     {
                         std::cout << BB->get_name() << ":" << std::endl;
