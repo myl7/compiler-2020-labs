@@ -2,7 +2,7 @@
 #include <algorithm>
 #include "logging.hpp"
 
-std::map<BasicBlock *, std::set<Value *>> useSet, defSet;
+std::map<BasicBlock *, std::set<Value *>> useSet, defSet, phiUse, phiOut;
 
 void ActiveVars::run()
 {
@@ -192,14 +192,12 @@ void ActiveVars::run()
                     {
                         for (auto &item : live_in[succBB])
                         {
-                            if (OutSet.find(item) == OutSet.end())
-                            {
-                                OutSet.insert(item);
-                            }
+                            if (phiUse[succBB].find(item) != phiUse[succBB].end() && phiOut[BB].find(item) == phiOut[BB].end())
+                                continue;
+                            OutSet.insert(item);
                         }
-                        // std::set_union(live_in[succBB].begin(), live_in[succBB].end(), OutSet.begin(), OutSet.end(), std::inserter(OutSet, OutSet.begin()));
                     }
-                    live_out.insert({BB, OutSet});
+                    live_out[BB] = OutSet;
 
                     // In
                     std::set<Value *> tmpSet = OutSet;
@@ -210,43 +208,21 @@ void ActiveVars::run()
                             tmpSet.erase(defItem);
                         }
                     }
-                    std::set<Value *> InSet = {};
-                    // LOG_DEBUG << "use " << BB->get_name() << " " << (*(useSet[BB].begin()))->get_name();
+                    std::set<Value *> InSet = tmpSet;
                     for (auto &item : useSet[BB])
                     {
-                        if (tmpSet.find(item) == tmpSet.end())
-                        {
-                            tmpSet.insert(item);
-                        }
+                        InSet.insert(item);
                     }
-                    // std::set_union(useSet[BB].begin(), useSet[BB].end(), tmpSet.begin(), tmpSet.end(), std::inserter(InSet, InSet.begin()));
-
-                    // InSet will be larger or equal
-                    // if ((tmpSet or InSet) == InSet) do nothing
-                    // else flag = 1
-
-                    // std::cout << InSet.size();
-                    if (InSet.size() != useSet[BB].size())
+                    if (InSet.size() != live_in[BB].size())
                     {
-                        std::cout << BB->get_name() << ":" << std::endl;
-                        std::cout << "use:" << std::endl;
-                        for (auto &use : useSet[BB])
-                        {
-                            std::cout << use->get_name() << std::endl;
-                        }
-                        std::cout << "def:" << std::endl;
-                        for (auto &def : defSet[BB])
-                        {
-                            std::cout << def->get_name() << std::endl;
-                        }
+                        // std::cout << "!" << std::endl;
                         flag = 1;
                     }
-                    live_in.insert({BB, InSet});
+                    live_in[BB] = InSet;
                 }
             }
             func_->set_instr_name();
             // 在此分析 func_ 的每个bb块的活跃变量，并存储在 live_in live_out 结构内
-
             output_active_vars << print();
             output_active_vars << ",";
         }
