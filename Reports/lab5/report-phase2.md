@@ -227,6 +227,7 @@ label74:                                                ; preds = %label2
 ```
 
 优化后：
+
 ```llvm
 declare i32 @input()
 
@@ -622,26 +623,111 @@ label99:                                                ; preds = %label52
 - 活跃变量分析
 
 实现思路：
-利用书上的不断迭代选出活跃变量的方法，将 InSet 和 OutSet 变量集和相应的 BB 绑定
+利用书上的不断迭代选出活跃变量的方法，将 InSet 和 OutSet 变量集和相应的 BB 绑定，
+在处理 phi 指令时，需要把用者身份和当前身份都输出到一个 map 中，在后来的 InSet 迭代时加以判断
 
-相应的伪代码：
+相应的实现代码：
 
+`set_print_name()` 把变量转换成可输出的格式
+
+```cpp
+m_->set_print_name();
 ```
-live_in 清空
-live_out 清空
-flag := 1
-while (flag)
+
+对于 `ret` 指令，需要判断是 void ret 还是 int/float ret
+
+```cpp
+if (type == Instruction::OpID::ret)
 {
-    flag = 0
-    for (EXIT 之外的 BB : BBs)
+    if (instr->get_operands().size() == 1)
     {
-        OutSet(B) := SUM(InSet(S)) // （对所有 B 的后继块 S）
-        InSet(B) := use(BB) + SUM(OutSet(B) - def(BB))
-        将 OutSet(B) 和 InSet(B) 插入到 live_in 和 live_out 的 map 中
-        if (live_in 变化)
-            flag = 1
+        if (lhsSet.find(instr->get_operand(0)) == lhsSet.end() && instr->get_operand(0)->get_name() != "")
+        {
+            rhsSet.insert(instr->get_operand(0));
+        }
+    }
+    continue;
+}
+```
+
+对于 `phi` 指令，需要保存用者身份和当前身份
+
+```cpp
+if (type == Instruction::OpID::phi)
+{
+    if (rhsSet.find(instr) == rhsSet.end() && instr->get_name() != "")
+    {
+        lhsSet.insert(instr);
+    }
+    int size = instr->get_operands().size();
+    for (int i = 0; i < size; i += 2)
+    {
+        auto op = instr->get_operand(i);
+        if (lhsSet.find(op) == lhsSet.end() && op->get_name() != "")
+        {
+            rhsSet.insert(op);
+        }
+        phiOut[dynamic_cast<BasicBlock *>(instr->get_operand(i + 1))].insert(op);
+        phiUse[BB].insert(op);
+    }
+    continue;
+}
+```
+
+对于大部分指令，只需要把 lhs 和 rhs 存入 use 和 def 集合中
+
+```cpp
+if (rhsSet.find(instr) == rhsSet.end())
+{
+    lhsSet.insert(instr);
+}
+for (auto &op : instr->get_operands())
+{
+    if (lhsSet.find(op) == lhsSet.end() && op->get_name() != "")
+    {
+        rhsSet.insert(op);
     }
 }
+continue;
+```
+
+对于主体部分，类似书上的做法，用 flag 变量观察循环前后 Live_in 集合是否改变
+
+在 live_out 的部分，判断是否要插入来着 `phi` 语句的 `Value*`
+
+```cpp
+std::set<Value *> OutSet = {};
+for (auto &succBB : BB->get_succ_basic_blocks())
+{
+    for (auto &item : live_in[succBB])
+    {
+        if (phiUse[succBB].find(item) != phiUse[succBB].end() && phiOut[BB].find(item) == phiOut[BB].end())
+        {
+            continue;
+        }
+        OutSet.insert(item);
+    }
+}
+live_out[BB] = OutSet;
+```
+
+在 live_in 的部分，要从之前产生的 `OutSet - defSet[BB]` 和 `useSet[BB]` 合并
+
+```cpp
+std::set<Value *> tmpSet = OutSet;
+for (auto &defItem : defSet[BB])
+{
+    if (tmpSet.find(defItem) != tmpSet.end())
+    {
+        tmpSet.erase(defItem);
+    }
+}
+std::set<Value *> InSet = tmpSet;
+for (auto &item : useSet[BB])
+{
+    InSet.insert(item);
+}
+live_in[BB] = InSet;
 ```
 
 ### 实验总结

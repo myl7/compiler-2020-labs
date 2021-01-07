@@ -218,7 +218,6 @@ void ActiveVars::run()
                     }
                     if (InSet.size() != live_in[BB].size())
                     {
-                        // std::cout << "!" << std::endl;
                         flag = 1;
                     }
                     live_in[BB] = InSet;
