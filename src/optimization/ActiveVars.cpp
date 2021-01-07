@@ -30,9 +30,9 @@ void ActiveVars::run()
                     Instruction::OpID type = instr->get_instr_type();
                     if (type == Instruction::OpID::ret)
                     {
-                        if (!(static_cast<ReturnInst *>(instr)->is_void_ret()))
+                        if (instr->get_operands().size() == 1)
                         {
-                            if (lhsSet.find(instr->get_operand(0)) == lhsSet.end() && instr->get_name() != "")
+                            if (lhsSet.find(instr->get_operand(0)) == lhsSet.end() && instr->get_operand(0)->get_name() != "")
                             {
                                 rhsSet.insert(instr->get_operand(0));
                             }
@@ -142,8 +142,9 @@ void ActiveVars::run()
                             rhsSet.insert(op);
                         }
                     }
-                    std::cout << type << "!" << std::endl;
+                    // std::cout << type << "!" << std::endl;
                 }
+                /*
                 std::cout << BB->get_name() << ":" << std::endl;
                 std::cout << "use:" << std::endl;
                 for (auto &use : rhsSet)
@@ -155,12 +156,12 @@ void ActiveVars::run()
                 {
                     std::cout << def->get_name() << std::endl;
                 }
+                */
                 defSet.insert({BB, lhsSet});
                 useSet.insert({BB, rhsSet});
             }
         }
     }
-    // std::cout << "useList gen" << std::endl;
     for (auto &func : this->m_->get_functions())
     {
         if (func->get_basic_blocks().empty())
@@ -175,8 +176,7 @@ void ActiveVars::run()
             live_out.clear();
 
             int flag = 1;
-            while (flag == 1)
-
+            while (flag)
             {
                 flag = 0;
                 for (auto &BB : func_->get_basic_blocks())
@@ -208,9 +208,20 @@ void ActiveVars::run()
                     // InSet will be larger or equal
                     // if ((tmpSet or InSet) == InSet) do nothing
                     // else flag = 1
+                    std::cout << InSet.size();
                     if (InSet.size() != useSet[BB].size())
                     {
-                        // std::cout << BB->get_name() << std::endl;
+                        std::cout << BB->get_name() << ":" << std::endl;
+                        std::cout << "use:" << std::endl;
+                        for (auto &use : useSet[BB])
+                        {
+                            std::cout << use->get_name() << std::endl;
+                        }
+                        std::cout << "def:" << std::endl;
+                        for (auto &def : defSet[BB])
+                        {
+                            std::cout << def->get_name() << std::endl;
+                        }
                         flag = 1;
                     }
                     live_in.insert({BB, InSet});
