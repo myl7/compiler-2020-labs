@@ -10,6 +10,8 @@ void ActiveVars::run()
     output_active_vars.open("active_vars.json", std::ios::out);
     output_active_vars << "[";
 
+    m_->set_print_name();
+
     for (auto &func : this->m_->get_functions())
     {
         if (func->get_basic_blocks().empty())
@@ -30,7 +32,7 @@ void ActiveVars::run()
                     {
                         if (!(static_cast<ReturnInst *>(instr)->is_void_ret()))
                         {
-                            if (lhsSet.find(instr->get_operand(0)) == lhsSet.end())
+                            if (lhsSet.find(instr->get_operand(0)) == lhsSet.end() && instr->get_name() != "")
                             {
                                 rhsSet.insert(instr->get_operand(0));
                             }
@@ -50,12 +52,28 @@ void ActiveVars::run()
                     }
                     if (type == Instruction::OpID::alloca)
                     {
-                        // TODO
+                        if (rhsSet.find(instr) == rhsSet.end())
+                        {
+                            lhsSet.insert(instr);
+                        }
                         continue;
                     }
                     if (type == Instruction::OpID::phi)
                     {
-                        // TODO
+                        if (rhsSet.find(instr) == rhsSet.end() && instr->get_name() != "")
+                        {
+                            lhsSet.insert(instr);
+                        }
+                        int size = instr->get_operands().size();
+                        for (int i = 0; i < size; i++)
+                        {
+                            auto op = instr->get_operand(i);
+                            if (lhsSet.find(op) == lhsSet.end() && op->get_name() != "")
+                            {
+                                rhsSet.insert(op);
+                            }
+                            i++;
+                        }
                         continue;
                     }
                     if (type == Instruction::OpID::call)
@@ -67,7 +85,7 @@ void ActiveVars::run()
                                 lhsSet.insert(instr);
                             }
                         }
-                        for (int i = 0; i < instr->get_num_operand(); i++)
+                        for (int i = 1; i < instr->get_num_operand(); i++)
                         {
                             if (lhsSet.find(instr->get_operand(i)) == lhsSet.end() && instr->get_operand(i)->get_name() != "")
                             {
@@ -76,26 +94,69 @@ void ActiveVars::run()
                         }
                         continue;
                     }
-                    if (type == Instruction::OpID::getelementptr)
+                    if (type == Instruction::OpID::getelementptr || type == Instruction::OpID::zext || type == Instruction::OpID::fcmp || type == Instruction::OpID::cmp || type == Instruction::OpID::add || type == Instruction::OpID::sub || type == Instruction::OpID::mul || type == Instruction::OpID::sdiv || type == Instruction::OpID::fadd || type == Instruction::OpID::fsub || type == Instruction::OpID::fmul || type == Instruction::OpID::fdiv)
                     {
-                        // TODO
+                        if (rhsSet.find(instr) == rhsSet.end())
+                        {
+                            lhsSet.insert(instr);
+                        }
+                        for (auto &op : instr->get_operands())
+                        {
+                            if (lhsSet.find(op) == lhsSet.end() && op->get_name() != "")
+                            {
+                                rhsSet.insert(op);
+                            }
+                        }
                         continue;
                     }
-                    if (rhsSet.find(instr) == rhsSet.end())
+                    if (type == Instruction::OpID::store)
                     {
-                        lhsSet.insert(instr);
+                        for (auto &op : instr->get_operands())
+                        {
+                            if (lhsSet.find(op) == lhsSet.end() && op->get_name() != "")
+                            {
+                                rhsSet.insert(op);
+                            }
+                        }
+                        continue;
                     }
-                    // std::cout << "lhs insert" << ":" << BB->get_name() << std::endl;
+                    if (type == Instruction::OpID::load)
+                    {
+                        if (rhsSet.find(instr) == rhsSet.end())
+                        {
+                            lhsSet.insert(instr);
+                        }
+                        for (auto &op : instr->get_operands())
+                        {
+                            if (lhsSet.find(op) == lhsSet.end() && op->get_name() != "")
+                            {
+                                rhsSet.insert(op);
+                            }
+                        }
+                        continue;
+                    }
                     for (auto &op : instr->get_operands())
                     {
                         if (lhsSet.find(op) == lhsSet.end() && op->get_name() != "")
                         {
-                            rhsSet.insert(static_cast<Instruction *>(op));
+                            rhsSet.insert(op);
                         }
                     }
+                    std::cout << type << "!" << std::endl;
                 }
-                useSet.insert({BB, lhsSet});
-                defSet.insert({BB, rhsSet});
+                std::cout << BB->get_name() << ":" << std::endl;
+                std::cout << "use:" << std::endl;
+                for (auto &use : rhsSet)
+                {
+                    std::cout << use->get_name() << std::endl;
+                }
+                std::cout << "def:" << std::endl;
+                for (auto &def : lhsSet)
+                {
+                    std::cout << def->get_name() << std::endl;
+                }
+                defSet.insert({BB, lhsSet});
+                useSet.insert({BB, rhsSet});
             }
         }
     }
