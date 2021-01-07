@@ -65,14 +65,15 @@ void ActiveVars::run()
                             lhsSet.insert(instr);
                         }
                         int size = instr->get_operands().size();
-                        for (int i = 0; i < size; i++)
+                        for (int i = 0; i < size; i += 2)
                         {
                             auto op = instr->get_operand(i);
                             if (lhsSet.find(op) == lhsSet.end() && op->get_name() != "")
                             {
                                 rhsSet.insert(op);
                             }
-                            i++;
+                            phiOut[dynamic_cast<BasicBlock *>(instr->get_operand(i + 1))].insert(op);
+                            phiUse[BB].insert(op);
                         }
                         continue;
                     }
@@ -193,7 +194,9 @@ void ActiveVars::run()
                         for (auto &item : live_in[succBB])
                         {
                             if (phiUse[succBB].find(item) != phiUse[succBB].end() && phiOut[BB].find(item) == phiOut[BB].end())
+                            {
                                 continue;
+                            }
                             OutSet.insert(item);
                         }
                     }
