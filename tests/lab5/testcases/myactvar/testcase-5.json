@@ -1,0 +1,22 @@
+[{
+"function": "main",
+"live_in": {
+  "label15": ["%op37",],
+  "label22": ["%op38",],
+  "label24": ["%op39",],
+  "label25": ["%op34",],
+  "label31": ["%op39",],
+  "label35": ["%op39",],
+
+    },
+"live_out": {
+  "label22": ["%op37",],
+  "label24": ["%op38",],
+  "label25": ["%op39",],
+  "label31": ["%op34",],
+  "label35": ["%op39",],
+
+    }
+}
+
+,]

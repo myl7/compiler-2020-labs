@@ -1,0 +1,52 @@
+int arr[100];
+
+void quicksort(int start, int len) {
+    int pivot;
+    int i;
+    int j;
+    int k;
+    int t;
+    if (len <= 1) return;
+    pivot = arr[start + len - 1];
+    i = 0;
+    j = 0;
+    k = len;
+    while (i < k) {
+        if (arr[start + i] < pivot) {
+            t = arr[start + i];
+            arr[start + i] = arr[start + j];
+            arr[start + j] = t;
+            i = i + 1;
+            j = j + 1;
+        } else {
+            if (pivot < arr[start + i]) {
+                k = k - 1;
+                t = arr[start + i];
+                arr[start + i] = arr[start + k];
+                arr[start + k] = t;
+            }
+            else i = i + 1;
+        }
+    }
+    quicksort(start, j);
+    quicksort(start + k, len - k);
+    return;
+}
+
+void main(void) {
+    int n;
+    int i;
+    i = 0;
+    n = input();
+    while (i < n) {
+        arr[i] = input();
+        i = i + 1;
+    }
+    quicksort(0, n);
+    i = 0;
+    while (i < n) {
+        output(arr[i]);
+        i = i + 1;
+    }
+    return;
+}
