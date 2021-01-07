@@ -13,3 +13,5 @@ public:
 
     void run() override;
 };
+
+BasicBlock *find_common_parent(BasicBlock *a, BasicBlock *b, BBset_t *bb_set);
