@@ -1,0 +1,86 @@
+[{
+"function": "mv",
+"live_in": {
+  "label_entry": ["%arg0","%arg1","%arg2","%arg3",],
+  "label12": ["%arg0","%arg1","%arg2","%arg3","%op27",],
+  "label18": ["%arg0","%arg1","%arg2","%arg3","%op116",],
+  "label21": ["%arg0","%arg1","%arg2","%arg3",],
+  "label23": ["%arg0","%arg1","%arg2","%arg3","%op116",],
+  "label28": ["%arg0","%arg1","%arg2","%arg3","%op50","%op123","%op122","%op121",],
+  "label34": ["%arg0","%arg1","%arg2","%arg3","%op120","%op118","%op117",],
+  "label36": ["%arg0","%arg1","%arg2","%arg3","%op68","%op120","%op125","%op118","%op124","%op117",],
+  "label42": ["%arg0","%arg1","%arg2","%arg3","%op120","%op123","%op122","%op121",],
+  "label48": ["%arg0","%arg1","%arg2","%arg3","%op120","%op123","%op122","%op121",],
+  "label52": ["%arg0","%arg1","%arg2","%arg3","%op46","%op120","%op123","%op122","%op121",],
+  "label59": ["%arg0","%arg1","%arg2","%arg3","%op120","%op123","%op122","%op121",],
+  "label63": ["%arg0","%arg1","%arg2","%arg3","%op120","%op123","%op122","%op121",],
+  "label66": ["%arg0","%arg1","%arg2","%arg3","%op82","%op85","%op120","%op123","%op122","%op121",],
+  "label70": ["%arg0","%arg1","%arg2","%arg3","%op120","%op123","%op122","%op121",],
+  "label78": ["%arg0","%arg1","%arg2","%arg3","%op74","%op120","%op123","%op121",],
+  "label87": ["%arg0","%arg1","%arg2","%arg3","%op120","%op123","%op122","%op121",],
+  "label97": ["%arg0","%arg1","%arg2","%arg3","%op90","%op94","%op120","%op123","%op122","%op121",],
+  "label104": ["%arg0","%arg1","%arg2","%arg3","%op90","%op100","%op120","%op123","%op122","%op121",],
+  "label113": ["%arg0","%arg1","%arg2","%arg3","%op109","%op120","%op123","%op122","%op121",],
+
+    },
+"live_out": {
+  "label_entry": ["%arg0","%arg1","%arg2","%arg3",],
+  "label12": ["%arg0","%arg1","%arg2","%arg3","%op116",],
+  "label18": ["%arg0","%arg1","%arg2","%arg3","%op116",],
+  "label21": ["%arg0","%arg1","%arg2","%arg3",],
+  "label23": ["%arg0","%arg1","%arg2","%arg3","%op27",],
+  "label28": ["%arg0","%arg1","%arg2","%arg3","%op120","%op118","%op117",],
+  "label34": ["%arg0","%arg1","%arg2","%arg3","%op120","%op118","%op117",],
+  "label36": ["%arg0","%arg1","%arg2","%arg3","%op120","%op123","%op122","%op121",],
+  "label42": ["%arg0","%arg1","%arg2","%arg3","%op46","%op120","%op123","%op122","%op121",],
+  "label48": ["%arg0","%arg1","%arg2","%arg3","%op50","%op123","%op122","%op121",],
+  "label52": ["%arg0","%arg1","%arg2","%arg3","%op120","%op123","%op122","%op121",],
+  "label59": ["%arg0","%arg1","%arg2","%arg3","%op120","%op123","%op122","%op121",],
+  "label63": ["%arg0","%arg1","%arg2","%arg3","%op120","%op123","%op122","%op121",],
+  "label66": ["%arg0","%arg1","%arg2","%arg3","%op68","%op120","%op125","%op124",],
+  "label70": ["%arg0","%arg1","%arg2","%arg3","%op74","%op120","%op123","%op121",],
+  "label78": ["%arg0","%arg1","%arg2","%arg3","%op82","%op85","%op120","%op123",],
+  "label87": ["%arg0","%arg1","%arg2","%arg3","%op90","%op94","%op120","%op123","%op122","%op121",],
+  "label97": ["%arg0","%arg1","%arg2","%arg3","%op90","%op100","%op120","%op123","%op122","%op121",],
+  "label104": ["%arg0","%arg1","%arg2","%arg3","%op109","%op120","%op123","%op122","%op121",],
+  "label113": ["%arg0","%arg1","%arg2","%arg3","%op120","%op123","%op122","%op121",],
+
+    }
+}
+
+,{
+"function": "main",
+"live_in": {
+  "label_entry": ["%A","%B","%C",],
+  "label3": ["%A","%B","%C","%op32","%op75",],
+  "label9": ["%A","%B","%C","%op74",],
+  "label10": ["%A","%B","%C",],
+  "label11": ["%A","%B","%C","%op37","%op74",],
+  "label17": ["%A","%B","%C","%op74","%op75",],
+  "label30": ["%A","%B","%C","%op74","%op75",],
+  "label34": ["%A","%B","%C","%op24","%op28","%op74","%op75",],
+  "label38": ["%A","%B","%C","%op68",],
+  "label44": ["%A","%B","%C","%op76",],
+  "label52": ["%A","%B","%C",],
+  "label65": ["%A","%B","%C","%op49","%op76",],
+  "label70": ["%C","%op62",],
+
+    },
+"live_out": {
+  "label_entry": ["%A","%B","%C",],
+  "label3": ["%A","%B","%C","%op74",],
+  "label9": ["%A","%B","%C","%op74",],
+  "label10": ["%A","%B","%C",],
+  "label11": ["%A","%B","%C","%op74","%op75",],
+  "label17": ["%A","%B","%C","%op24","%op28","%op74","%op75",],
+  "label30": ["%A","%B","%C","%op32","%op75",],
+  "label34": ["%A","%B","%C","%op37","%op74",],
+  "label38": ["%A","%B","%C","%op76",],
+  "label44": ["%A","%B","%C","%op49","%op76",],
+  "label52": ["%C","%op62",],
+  "label65": ["%A","%B","%C","%op68",],
+
+    }
+}
+
+,]

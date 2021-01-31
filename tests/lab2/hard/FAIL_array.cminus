@@ -1,0 +1,3 @@
+/* [] and [ ] are different */
+float func(float array[ ])
+{}

@@ -1,0 +1,69 @@
+int x;  
+int A[400];
+int B[20];
+int C[20];
+
+void mv(int n, int A[], int b[], int res[]){
+    int i;
+    int j;
+    int x;
+    int y;
+    
+    y = 0;
+    x = 11;
+    
+
+    i = 0;
+    while(i < n){    
+        res[i] = 0;        
+        i = i + 1;
+    }
+
+    i = 0;
+    j = 0;
+    while (i < n){
+        j = 0;
+        while (j < n){
+            if (A[i*20+j] == 0){
+                x = x * b[i] + b[j];
+                y = y - x;
+            }else{
+                res[i] = res[i] + A[i*20+j] * b[j];
+            }
+            j = j + 1;
+        }
+        i = i + 1;
+    }    
+}
+
+
+void main(void){
+    int n;
+    int i;
+    int j;
+
+    n =14;
+    i = 0;
+
+    while (i < n){
+        j = 0;
+        while (j < n){
+            A[i*20+j] = (n-i)*(n-j);
+            j = j + 1;
+        }
+        i = i + 1;
+    }
+
+    i = 0;
+    while (i < n){
+        B[i] = i*(n-i);
+        i = i + 1;
+    }
+
+    i = 0;
+    mv(n, A, B, C);
+    mv(n, A, C, B);
+
+    output(C[n-1]);
+    return ;
+}

@@ -1,0 +1,7 @@
+/* various syntax error */
+int main {
+  if a = 1 {
+    b = 3
+    c = 4;
+  }
+  return {6};
