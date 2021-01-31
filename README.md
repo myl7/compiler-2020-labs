@@ -11,8 +11,8 @@
 *   [lab4](./Documentations/lab4/README.md)
     *   DDL : 2020/12/07, 23:59:59
 *   [lab5](./Documentations/lab5/README.md)
-    *   DDL-Phase1 :2020/12/21 23:59:59 (北京标准时间，UTC+8)  
-    *   DDL-Phase2 :2021/01/04 23:59:59 (北京标准时间，UTC+8) 
+    *   DDL-Phase1 :2020/12/21 23:59:59 (北京标准时间，UTC+8)
+    *   DDL-Phase2 :2021/01/04 23:59:59 (北京标准时间，UTC+8)
 ### FAQ: How to merge upstream remote branches
 In brief, you need another alias for upstream repository (we assume you are now in your local copy of forked repository on Gitlab):
 ```
@@ -26,3 +26,12 @@ Then synchronize changes to your forked remote repository:
 ```
 (shell) $ git push origin master
 ```
+
+## License
+
+Because the repo contains code from TAs,
+who have not licensed the code under an open source license,
+but only allowed us to public the code,
+the repo is only public for learning.
+
+ALL RIGHTS ARE RESERVED.
