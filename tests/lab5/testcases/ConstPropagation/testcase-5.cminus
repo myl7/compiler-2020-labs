@@ -1,0 +1,25 @@
+void main(void){
+    int i;
+    int a;
+    int b;
+    int ret;
+
+    a=1;
+    b=2;
+    ret = 0;
+    
+    i=0;
+    while(i<100000000)
+    {
+        int index;
+        index = i/10000000 + 0*1.23456*5.73478*2.3333*4.3673*6.34636;
+        if( (a < 3) < b )
+        {
+            ret = ret + a*b*1314*index*index*index*index*index*index;
+        }
+        i = i+1;
+    }
+
+    output(ret);
+    return ;
+}

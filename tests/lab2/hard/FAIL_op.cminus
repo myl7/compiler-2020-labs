@@ -1,0 +1,5 @@
+/* unrecognizable operator */
+int f(void){
+  1^;
+  ~~1;
+}

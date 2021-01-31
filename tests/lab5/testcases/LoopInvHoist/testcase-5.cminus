@@ -1,0 +1,26 @@
+void main(void){
+    int i;
+    int j;
+    int k;
+    int ret;
+
+    i = 1;
+    
+    while(i<100)
+    {
+        j = 0;
+        while(j<100)
+        {
+            k=0;
+            while(k<1000){
+                ret = (i*i*i*i*i*i*i*i*i*i)/i/i/i/i/i/i/i/i/i/i;
+                k=k+1;
+            }
+            
+            j=j+1;
+        }
+        i=i+1;
+    }
+	output(ret);
+    return ;
+}

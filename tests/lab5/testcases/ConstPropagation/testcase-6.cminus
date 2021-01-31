@@ -1,0 +1,28 @@
+int meanless(int num)
+{
+    int i;
+    int nothing;
+    i=0;
+    while(i<num)
+    {
+        nothing = 1.23456*5.73478*2.3333*4.3673*6.34636/2.57;
+        i = i+1;
+    }
+    return nothing;
+}
+void main(void){
+    int i;
+    int a;
+    a=(1<2)+20;
+
+    i=0;
+    while(i<10000000)
+    {
+        if(a)
+        {
+            meanless(a);
+        }
+        i=i+1;
+    }
+    return ;
+}

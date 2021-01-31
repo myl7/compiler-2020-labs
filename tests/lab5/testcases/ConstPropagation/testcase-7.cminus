@@ -1,0 +1,46 @@
+int score( int originTime, int optTime )
+{
+    int grades;
+    int hqw;
+    int cqy;
+    hqw = 10+1;
+    cqy = 8 + 8;
+    if( hqw < cqy)
+    {
+        if( cqy/8 == 2)
+        {
+            if( hqw == 11)
+            {
+                if( cqy > 10)
+                {
+                    if( hqw >5)
+                    {
+                        grades = (optTime - originTime)*cqy*hqw*(10-optTime);
+                    }
+                }
+            }
+        }
+    }
+    return grades;
+}
+
+void main(void){
+    int i;
+    int a;
+    int b;
+    int ret;
+
+    ret = 0;
+    
+    i=0;
+    while(i<100000000)
+    {
+        a = i/10000000;
+        b = 9 - i/10000000;
+        ret = ret + score(a, b);
+        i = i+1;
+    }
+
+    output(ret);
+    return ;
+}

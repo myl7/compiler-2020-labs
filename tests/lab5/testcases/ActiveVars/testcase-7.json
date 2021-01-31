@@ -1,0 +1,71 @@
+[{
+"function": "transpose",
+"live_in": {
+  "label_entry": ["%arg0","%arg1","%arg2",],
+  "label12": ["%arg1","%arg2","%op11","%op35","%op90","%op89",],
+  "label18": ["%arg1","%arg2","%op11","%op88","%op86",],
+  "label20": ["%arg1","%arg2","%op11","%op88","%op92","%op91","%op86",],
+  "label26": ["%arg1","%arg2","%op11","%op88","%op90","%op89",],
+  "label33": ["%arg1","%arg2","%op11","%op88","%op90","%op89",],
+  "label36": ["%arg1","%arg2","%op11","%op88","%op90","%op89",],
+  "label39": ["%arg1","%arg2","%op11","%op88","%op90",],
+  "label46": ["%arg1","%arg2","%op11","%op38","%op51","%op85","%op88","%op89",],
+  "label48": ["%arg1","%arg2","%op11","%op44","%op88","%op90",],
+  "label59": ["%arg1","%arg2","%op11","%op51","%op56","%op88","%op90",],
+  "label70": ["%arg1","%arg2","%op11","%op51","%op62","%op67","%op88","%op90",],
+  "label81": ["%arg1","%arg2","%op11","%op51","%op78","%op88","%op90",],
+
+    },
+"live_out": {
+  "label_entry": ["%arg1","%arg2","%op11",],
+  "label12": ["%arg1","%arg2","%op11","%op88","%op86",],
+  "label18": ["%arg1","%arg2","%op11","%op88","%op86",],
+  "label20": ["%arg1","%arg2","%op11","%op88","%op90","%op89",],
+  "label26": ["%arg1","%arg2","%op11","%op88","%op90","%op89",],
+  "label33": ["%arg1","%arg2","%op11","%op35","%op90","%op89",],
+  "label36": ["%arg1","%arg2","%op11","%op38","%op88","%op89",],
+  "label39": ["%arg1","%arg2","%op11","%op44","%op88","%op90",],
+  "label46": ["%arg1","%arg2","%op11","%op88","%op92","%op91",],
+  "label48": ["%arg1","%arg2","%op11","%op51","%op56","%op88","%op90",],
+  "label59": ["%arg1","%arg2","%op11","%op51","%op62","%op67","%op88","%op90",],
+  "label70": ["%arg1","%arg2","%op11","%op51","%op78","%op88","%op90",],
+  "label81": ["%arg1","%arg2","%op11","%op51","%op85","%op88",],
+
+    }
+}
+
+,{
+"function": "main",
+"live_in": {
+  "label_entry": ["%matrix","%a",],
+  "label5": ["%matrix","%a","%op4","%op20",],
+  "label11": ["%matrix","%a","%op4","%op62",],
+  "label15": ["%matrix","%a","%op4",],
+  "label17": ["%matrix","%a","%op4","%op62",],
+  "label21": ["%matrix","%a","%op4","%op39",],
+  "label27": ["%matrix","%a","%op4","%op63",],
+  "label32": ["%matrix",],
+  "label34": ["%matrix","%a","%op4","%op29","%op63",],
+  "label40": ["%matrix","%op59","%op61",],
+  "label46": ["%matrix","%op65","%op64",],
+  "label55": ["%matrix","%op50","%op65","%op64",],
+
+    },
+"live_out": {
+  "label_entry": ["%matrix","%a","%op4",],
+  "label5": ["%matrix","%a","%op4","%op62",],
+  "label11": ["%matrix","%a","%op4","%op62",],
+  "label15": ["%matrix","%a","%op4",],
+  "label17": ["%matrix","%a","%op4","%op20",],
+  "label21": ["%matrix","%a","%op4","%op63",],
+  "label27": ["%matrix","%a","%op4","%op29","%op63",],
+  "label32": ["%matrix",],
+  "label34": ["%matrix","%a","%op4","%op39",],
+  "label40": ["%matrix","%op65","%op64",],
+  "label46": ["%matrix","%op50","%op65","%op64",],
+  "label55": ["%matrix","%op59","%op61",],
+
+    }
+}
+
+,]

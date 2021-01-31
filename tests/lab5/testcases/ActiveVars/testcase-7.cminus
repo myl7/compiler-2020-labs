@@ -1,0 +1,62 @@
+int matrix[20000000];
+int a[100000];
+
+int transpose(int n, int matrix[], int rowsize){
+    int colsize;
+    int i;
+    int j;
+
+    i = 0;
+    j = 0;
+    colsize = n / rowsize;
+
+    while (i < colsize){
+        j = 0;
+        while (j < rowsize){
+            int curr;
+            if (i < j){
+                j = j + 1;
+            }
+            else {
+                curr = matrix[i * rowsize + j];
+                matrix[j * colsize + i] = matrix[i * rowsize + j];
+                matrix[i * rowsize + j] = curr;
+                j = j + 1;
+            }
+        }
+        i = i + 1;
+    }
+    return 1;
+}
+
+void main(void){
+    int n ;
+    int len;
+    int i;
+    int ans;
+
+    n = input();
+    len = 100000;
+    
+    i = 0;
+    while (i < n){
+        matrix[i] = i;
+        i = i + 1;
+    }
+
+    i = 0;
+    while (i < len){
+        transpose(n, matrix, a[i]);
+        i = i + 1;
+    }
+
+    ans = 0;
+
+    i = 0;
+    while (i < len){
+        ans = ans + i * i * matrix[i];
+        i = i + 1;
+    }
+
+    return ;
+}
