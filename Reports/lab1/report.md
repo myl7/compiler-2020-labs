@@ -1,6 +1,6 @@
 # lab1 实验报告
 
-***REMOVED*** ***REMOVED***
+***REMOVED*** myl7
 
 ## 实验要求
 

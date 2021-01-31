@@ -2,12 +2,12 @@
 
 ## 贡献详述
 
-### ***REMOVED***
+### myl7
 
 在实验 5.1 写了 LoopSearch 部分，
 在实验 5.2 实现了 ConstPropagation 和 LoopInvHoist
 
-### ***REMOVED***
+### yuanyiwei
 
 在实验 5.1 写了 Mem2reg 部分，
 在实验 5.2 实现了 ActiveVars
@@ -16,8 +16,8 @@
 
 |  名字  | 百分比 |
 | :----: | :----: |
-| ***REMOVED*** |  50%   |
-| ***REMOVED*** |  50%   |
+| myl7 |  50%   |
+| yuanyiwei |  50%   |
 
 百分比相加应当等于 100%
 
